@@ -1,6 +1,6 @@
 # MF4 Log Analytics: automated start-up analysis of ECU measurement logs
 
-**Turn hours of manual log inspection into a few seconds of automated analysis.**
+**Turn about 95 hours of manual log inspection into about 2.5 hours of unattended analysis.**
 A Python / pandas / NumPy pipeline reads MF4 (MDF4) measurement recordings, finds every power-up, and reports for each
 one which of two controller paths started first, by how many milliseconds, why each path was released, and whether the
 system state misbehaved afterwards. Results come as a CSV or in an interactive browser dashboard.
@@ -24,6 +24,20 @@ Drill into any power-up. Here start-up #6 is flagged **NOK**: PATH B started 1.2
 offset between the two paths is removed. The raw timestamps alone (+2.0 ms) would have hidden the problem.
 
 ![Start-up timeline for a violating power-up with IPC frames and system-state bands](docs/startup-timeline.png)
+
+## Impact
+
+Worked example for a long-duration test campaign: 10 recordings, each about 4 GB from a 120-minute run, each with 57-60 start-up cycles.
+
+| | Value |
+|---|---|
+| Start-up cycles to check | 570-600 (about 585) |
+| Manual analysis, about 10 min per cycle (author's estimate) | 5,700-6,000 min = **95-100 h**, about 12 working days |
+| This tool, about 15 min per 3.4 GB recording, unattended | about 150 min = **2.5 h** |
+| Time saved | **about 95 h** (range 92.5-97.5 h), **97 % less**, about **39x faster** |
+| Per cycle | about 10 min by hand vs about 15 s automated |
+
+Notes: the tool time was measured once on a 3.4 GB recording (peak memory about 5.7 GB) while another analysis was running, so it is an upper bound. The manual time per cycle is an estimate. Recording time and the time spent reading results and deciding what to fix are not counted: they are needed either way. Try your own numbers in the [interactive calculator](https://anuj-nagar-0910.github.io/mf4-log-analytics/workflow.html#impact).
 
 ## What it does
 

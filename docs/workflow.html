@@ -76,7 +76,7 @@
   .toggles label { display:flex; align-items:center; gap:6px; }
 
   /* lab */
-  #lab { padding:18px 20px; }
+  #lab, #impactCard { padding:18px 20px; }
   .controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px 22px; }
   @media (max-width:800px) { .controls { grid-template-columns:1fr; } }
   .ctl label { display:flex; justify-content:space-between; font-size:13px; color:var(--muted); }
@@ -134,6 +134,14 @@
     <div class="svgwrap"><svg id="tl" viewBox="0 0 1000 250" role="img" aria-label="Timeline of the application start on both paths"></svg></div>
     <div class="results" id="results"></div>
     <div class="trace" id="trace"></div>
+  </div>
+
+  <h2 id="impact">3 · Impact: time saved</h2>
+  <div class="card" id="impactCard">
+    <p style="margin:0 0 12px;color:var(--muted)">Defaults describe a long-duration test campaign: 10 recordings of about 4 GB, 57-60 start-up cycles each. Change the numbers to match your own project.</p>
+    <div class="controls" id="icontrols"></div>
+    <div class="results" id="iresults" style="margin-top:16px"></div>
+    <p class="note" style="margin:12px 0 0;color:var(--muted);font-size:13px">Estimates, not benchmarks. Manual time per cycle is the author's estimate; tool time was measured once on a 3.4 GB recording and is an upper bound. Recording time and the time spent reading results and deciding what to fix are not counted.</p>
   </div>
 
   <footer>Part of <a href="../README.md">MF4 Log Analytics</a>. Full reference: <a href="DOCUMENTATION.md">DOCUMENTATION.md</a>. Everything on this page runs locally in your browser; the lab uses the same formulas as <code>analyze_mf4_startup_order.py</code> (idealised: enough IPC pairs to average out sampling noise in the offset estimate).</footer>
@@ -335,6 +343,28 @@ function calc() {
     (m.rawVerdict !== m.verdict && m.rawVerdict !== 'NA' ? `<li>Trusting the raw timestamps alone would have said <b>${m.rawVerdict.replace(/_/g, ' ')}</b>: the clock offset hides the real order.</li>` : '') + `</ol>`;
 }
 
+/* ---------------- impact calculator ---------------- */
+const IMP = [
+  { id:'logs', label:'Recordings', min:1, max:50, step:1, v:10 },
+  { id:'cyc',  label:'Start-up cycles per recording', min:1, max:100, step:.5, v:58.5 },
+  { id:'man',  label:'Manual minutes per cycle', min:1, max:30, step:.5, v:10 },
+  { id:'tool', label:'Tool minutes per recording', min:1, max:60, step:1, v:15 }
+];
+const I = {}; IMP.forEach(p => I[p.id] = p.v);
+$('#icontrols').innerHTML = IMP.map(p => `<div class="ctl"><label for="i_${p.id}">${p.label}<output id="io_${p.id}"></output></label><input type="range" id="i_${p.id}" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.v}"></div>`).join('');
+IMP.forEach(p => $('#i_' + p.id).oninput = e => { I[p.id] = +e.target.value; calcImpact(); });
+const fmt = (x, d = 1) => x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+function calcImpact() {
+  IMP.forEach(p => $('#io_' + p.id).textContent = fmt(I[p.id], p.step < 1 ? 1 : 0));
+  const cycles = I.logs * I.cyc, manMin = cycles * I.man, toolMin = I.logs * I.tool, savedMin = manMin - toolMin;
+  const pct = manMin > 0 ? savedMin / manMin * 100 : 0, speed = toolMin > 0 ? manMin / toolMin : 0, perCycleS = cycles > 0 ? toolMin * 60 / cycles : 0;
+  $('#iresults').innerHTML =
+    `<div class="res"><small>Cycles to check</small><strong>${fmt(cycles, cycles % 1 ? 1 : 0)}</strong><small>${fmt(I.logs, 0)} recordings</small></div>` +
+    `<div class="res"><small>Manual analysis</small><strong>${fmt(manMin / 60)} h</strong><small>about ${fmt(manMin / 60 / 8)} working days</small></div>` +
+    `<div class="res"><small>Tool, unattended</small><strong>${fmt(toolMin / 60)} h</strong><small>${fmt(toolMin, 0)} min, about ${fmt(perCycleS, 0)} s per cycle</small></div>` +
+    `<div class="res"><small>Time saved</small><strong>${fmt(savedMin / 60)} h</strong><small>${fmt(pct)} % less · ${fmt(speed)}x faster</small></div>`;
+}
+
 /* ---------------- theme ---------------- */
 $('#theme').onclick = () => {
   const root = document.documentElement;
@@ -344,7 +374,7 @@ $('#theme').onclick = () => {
 };
 try { const t = localStorage.getItem('wf-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
 
-show(0); calc();
+show(0); calc(); calcImpact();
 </script>
 </body>
 </html>
