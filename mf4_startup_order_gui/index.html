@@ -6,9 +6,9 @@
 <title>Start-up Order Viewer</title>
 <style id="baseStyle">
   :root {
-    --brand:#0024D3; --sky:#00A9EB; --teal:#00B48F; --coral:#F06473; --orange:#F58C35; --yellow:#FED34C;
+    --brand:#2563EB; --sky:#0EA5E9; --teal:#14B8A6; --coral:#F43F5E; --orange:#F59E0B; --yellow:#FACC15;
     --bg:#F4F6FB; --panel:#FFFFFF; --panel2:#F7F9FE; --line:#DCE3F0; --text:#0B1A3A; --muted:#5E6B88;
-    --pa:#0024D3; --pb:#00A9EB; --grey:#A3ADC2; --shadow:0 4px 18px rgba(0,36,211,.08);
+    --pa:#2563EB; --pb:#0EA5E9; --grey:#A3ADC2; --shadow:0 4px 18px rgba(37,99,235,.08);
   }
   [data-theme="dark"] {
     --bg:#0B1020; --panel:#121A2E; --panel2:#18223A; --line:#26324E; --text:#E8EDF7; --muted:#8A97B4;
@@ -18,7 +18,7 @@
   html,body { margin:0; }
   body { background:var(--bg); color:var(--text); font:14px/1.45 "Segoe UI",system-ui,sans-serif; }
   header { display:flex; align-items:center; gap:14px; padding:12px 22px; background:var(--brand); color:#fff;
-           position:sticky; top:0; z-index:30; box-shadow:0 2px 12px rgba(0,36,211,.25); }
+           position:sticky; top:0; z-index:30; box-shadow:0 2px 12px rgba(37,99,235,.25); }
   .logo { width:36px; height:36px; border-radius:9px; background:#fff; color:var(--brand); display:grid; place-items:center;
           font-weight:800; letter-spacing:-.5px; }
   .stripe { display:flex; height:4px; } .stripe span { flex:1; }
@@ -91,7 +91,7 @@
   th { position:sticky; top:0; background:var(--panel2); color:var(--muted); font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; cursor:pointer; user-select:none; z-index:1; }
   th:hover { color:var(--text); } th .arr { color:var(--brand); }
   tbody tr { cursor:pointer; } tbody tr:hover { background:var(--panel2); }
-  tr.sel td { background:rgba(0,36,211,.10) !important; }
+  tr.sel td { background:rgba(37,99,235,.10) !important; }
   tr.nokrow td { background:rgba(240,100,115,.10); }
   tr.checkrow td { background:rgba(245,140,53,.10); }
   .badge { display:inline-block; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700; letter-spacing:.03em; }
@@ -100,7 +100,7 @@
   .b-warn { background:rgba(245,140,53,.18); color:var(--orange); }
   .b-info { background:rgba(0,169,235,.15); color:var(--sky); }
   .b-na { background:rgba(140,153,181,.18); color:var(--muted); }
-  .b-run { background:rgba(0,36,211,.14); color:var(--brand); }
+  .b-run { background:rgba(37,99,235,.14); color:var(--brand); }
   .light { display:inline-block; width:11px; height:11px; border-radius:50%; margin:0 1px; vertical-align:middle; }
   .l-OK { background:var(--teal); } .l-NOK { background:var(--coral); } .l-CHECK { background:var(--orange); } .l-NA { background:var(--line); }
   .filters { display:flex; gap:10px; flex-wrap:wrap; padding:0 16px 14px; align-items:end; }
@@ -195,7 +195,6 @@
   <span id="ownerTag" class="owner" title="Responsible owner of this analysis and explanation"></span>
   <button id="themeBtn" title="Toggle theme">☾ / ☀</button>
 </header>
-<div class="stripe"><span style="background:#0024D3"></span><span style="background:#00A9EB"></span><span style="background:#00B48F"></span><span style="background:#F06473"></span><span style="background:#F58C35"></span><span style="background:#FED34C"></span></div>
 
 <main>
   <!-- LEFT -->
@@ -381,8 +380,8 @@ const stsysAny = r => (r.p1_stsys2 === 'Y' || r.p2_stsys2 === 'Y') ? 'Y' : (r.p1
 const stsysMs = r => Math.max(isN(r.p1_stsys2_ms) ? 0 : r.p1_stsys2_ms, isN(r.p2_stsys2_ms) ? 0 : r.p2_stsys2_ms);
 
 /* ---------------- SysState values (CM_SysState) ---------------- */
-const STSYS = { 0:['Vollsystem verfügbar','#00B48F'], 1:['eingeschränkt','#FED34C'], 2:['Rückfallebene ECU 1 auf Primär','#F06473'],
-                3:['Rückfallebene ECU 2 auf Sekundär','#F58C35'], 4:['Systemausfall','#B3123A'], 6:['Init','#A3ADC2'], 7:['Fehler','#B3123A'] };
+const STSYS = { 0:['Fully available','#14B8A6'], 1:['Limited','#FACC15'], 2:['Fallback 1 (primary)','#F43F5E'],
+                3:['Fallback 2 (secondary)','#F59E0B'], 4:['System failure','#B3123A'], 6:['Init','#A3ADC2'], 7:['Error','#B3123A'] };
 const stName = v => (STSYS[v] || ['unknown value'])[0];
 const stCol = v => v === 7 ? 'repeating-linear-gradient(45deg,#B3123A 0 4px,#6E0B24 4px 8px)' : (STSYS[v] || [0, '#7D879C'])[1];
 const stTxt = v => v === 1 ? '#0B1A3A' : '#fff';
@@ -1074,7 +1073,6 @@ function buildReport(rows, tlRows, mode) {
   @media print{header{box-shadow:none}.card{box-shadow:none} .tablewrap{overflow:visible}}</style></head><body>
 <header><div class="logo">S/O</div><div><h1>Start-up Order Report</h1><small>PATH A (master) vs PATH B · created by ${esc(ownerOf())} · generated ${new Date().toLocaleString()}</small></div>
   <div class="spacer"></div><span class="owner">👤 Owner: ${esc(ownerOf())}</span></header>
-<div class="stripe"><span style="background:#0024D3"></span><span style="background:#00A9EB"></span><span style="background:#00B48F"></span><span style="background:#F06473"></span><span style="background:#F58C35"></span><span style="background:#FED34C"></span></div>
 ${ownershipHtml()}
 <div class="card section"><div class="card-head"><h2>Scope</h2></div><div class="card-body">
   <ul style="margin:0 0 6px 18px;padding:0">${files}</ul>

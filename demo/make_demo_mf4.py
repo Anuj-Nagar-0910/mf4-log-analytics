@@ -6,7 +6,7 @@ Then: python analyze_mf4_startup_order.py demo/demo_startups.mf4
 
 Channel names are the placeholders from config/signals.example.json. The recording contains seven power-ups that
 cover every verdict the analyzer can report (clean order, same frame, PB before PA, resets on one / both paths,
-maximum resets reached, system state 2 after release).
+maximum resets reached on both paths, system state 2 after release).
 
 All times are integer sample indices (1 sample = 0.2 ms) so the expected result of every scenario is exact.
 """
@@ -45,7 +45,7 @@ SCENARIOS: List[Scenario] = [
     Scenario("reset on PATH1 only (PA1-PB0)", delay=6, offset=3, resets1=1),
     Scenario("reset on both paths (PA1-PB1)", delay=3, offset=2, resets1=1, resets2=1),
     Scenario("PB before PA (violation) + state 2", delay=-6, offset=16, state2=True),
-    Scenario("PATH2 reaches max resets (PA0-PB3)", delay=5, offset=2, resets2=3, max_resets2=True),
+    Scenario("both paths reach max resets (PA3-PB3)", delay=5, offset=2, resets1=3, resets2=3, max_resets2=True),
 ]
 
 
@@ -95,14 +95,14 @@ def build(path):
         boot = {k: gaps[k][-1][1] for k in (1, 2)}
         rel1 = boot[1] + 150 + (30 if sc.resets1 == 0 else 0)
         if sc.max_resets2:
-            rel2 = boot[2] + 200
+            rel2 = rel1 + 25
             err[2].append((rel2 - 2, 4))
         else:
             rel2 = max(rel1 + LAT + 2, boot[2] + 150)
         start1 = rel1 + 5
         start2 = start1 + sc.delay
         if sc.max_resets2:
-            start2 = rel2 + 5      # PATH2 runs on its own after the forced release
+            start2 = rel2 + 5      # PATH2 is released by the reset limit, not by the master
         rel = {1: rel1, 2: rel2}
         start = {1: start1, 2: start2}
 

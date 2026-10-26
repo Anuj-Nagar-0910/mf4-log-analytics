@@ -9,6 +9,15 @@ system state misbehaved afterwards. Results come as a CSV or in an interactive b
 > through timestamps in a measurement tool, correct for clock offset in your head, and repeat that for every power-up
 > in every file. This tool does it for the whole file, or a whole folder of files, in one run.
 
+## The dashboard at a glance
+
+![Dashboard overview: summary tiles, requirement check, cause-and-effect and start-delay charts](docs/dashboard-overview.png)
+
+Drill into any power-up. Here start-up #6 is flagged **NOK**: PATH B started 1.2 ms before PATH A once the 3.2 ms clock
+offset between the two paths is removed. The raw timestamps alone (+2.0 ms) would have hidden the problem.
+
+![Start-up timeline for a violating power-up with IPC frames and system-state bands](docs/startup-timeline.png)
+
 ## What it does
 
 | Step | What happens | Technique |
@@ -51,7 +60,7 @@ Sample result on the synthetic recording (`PB - PA` is the corrected start diffe
 | 4 | one reset on PATH1 (PA1-PB0) | +1.2 | PA_FIRST | OK |
 | 5 | one reset on both paths (PA1-PB1) | +0.6 | PA_FIRST | OK |
 | 6 | PATH2 starts first, 3.2 ms clock offset | -1.2 | PB_BEFORE_PA | **NOK** |
-| 7 | PATH2 hits max resets | n/a | released by max resets | INFO |
+| 7 | max resets on both paths (PA3-PB3) | +5.0 | PA_FIRST (rule not applicable) | INFO |
 
 ## Using your own recordings
 
