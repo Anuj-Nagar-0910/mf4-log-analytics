@@ -92,6 +92,11 @@ Python, pandas, NumPy, time-series and event analysis, data validation with two 
 classification, large-file handling, caching, CLI design, a small REST API, and an interactive front end for
 non-programmers.
 
+## Documentation
+
+- [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md): Python reference. Covers the CLI, signal map, every pipeline step, the decision rules, all 60 output columns, the module API and the dashboard HTTP API.
+- [docs/workflow.html](docs/workflow.html): interactive workflow diagram. Click through the 8 analysis steps and try the clock-offset lab. It is a single self-contained file, so you can open it in any browser, or serve the `docs/` folder with GitHub Pages.
+
 ## Project layout
 
 ```
@@ -99,6 +104,7 @@ analyze_mf4_startup_order.py   analysis engine + CLI
 mf4_startup_order_gui/         local dashboard (server.py, index.html, run_gui.bat)
 config/signals.example.json    signal map template
 demo/make_demo_mf4.py          synthetic recording generator
+docs/                          documentation, interactive workflow, screenshots
 ```
 
 ## License
