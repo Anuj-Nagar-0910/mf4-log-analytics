@@ -9,6 +9,13 @@ system state misbehaved afterwards. Results come as a CSV or in an interactive b
 > through timestamps in a measurement tool, correct for clock offset in your head, and repeat that for every power-up
 > in every file. This tool does it for the whole file, or a whole folder of files, in one run.
 
+
+### [▶ Open the interactive workflow (live demo)](https://anuj-nagar-0910.github.io/mf4-log-analytics/workflow.html)
+
+[![Interactive workflow: click through the 8 analysis steps and try the clock-offset lab](docs/workflow-preview.png)](https://anuj-nagar-0910.github.io/mf4-log-analytics/workflow.html)
+
+*Click the image or the link above: step through the analysis pipeline and play with the clock-offset lab in your browser. No install needed.*
+
 ## The dashboard at a glance
 
 ![Dashboard overview: summary tiles, requirement check, cause-and-effect and start-delay charts](docs/dashboard-overview.png)
@@ -95,7 +102,7 @@ non-programmers.
 ## Documentation
 
 - [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md): Python reference. Covers the CLI, signal map, every pipeline step, the decision rules, all 60 output columns, the module API and the dashboard HTTP API.
-- [docs/workflow.html](docs/workflow.html): interactive workflow diagram. Click through the 8 analysis steps and try the clock-offset lab. It is a single self-contained file, so you can open it in any browser, or serve the `docs/` folder with GitHub Pages.
+- [Interactive workflow (live)](https://anuj-nagar-0910.github.io/mf4-log-analytics/workflow.html) ([source: docs/workflow.html](docs/workflow.html)): interactive workflow diagram. Click through the 8 analysis steps and try the clock-offset lab. It is a single self-contained file, so you can open it in any browser, or serve the `docs/` folder with GitHub Pages.
 
 ## Project layout
 
