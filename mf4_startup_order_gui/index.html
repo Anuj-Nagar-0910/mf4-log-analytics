@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Start-up Order Viewer</title>
+<style id="baseStyle">
+  :root {
+    --brand:#0024D3; --sky:#00A9EB; --teal:#00B48F; --coral:#F06473; --orange:#F58C35; --yellow:#FED34C;
+    --bg:#F4F6FB; --panel:#FFFFFF; --panel2:#F7F9FE; --line:#DCE3F0; --text:#0B1A3A; --muted:#5E6B88;
+    --pa:#0024D3; --pb:#00A9EB; --grey:#A3ADC2; --shadow:0 4px 18px rgba(0,36,211,.08);
+  }
+  [data-theme="dark"] {
+    --bg:#0B1020; --panel:#121A2E; --panel2:#18223A; --line:#26324E; --text:#E8EDF7; --muted:#8A97B4;
+    --pa:#5B7BFF; --pb:#22B9F2; --grey:#5C6782; --shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; }
+  body { background:var(--bg); color:var(--text); font:14px/1.45 "Segoe UI",system-ui,sans-serif; }
+  header { display:flex; align-items:center; gap:14px; padding:12px 22px; background:var(--brand); color:#fff;
+           position:sticky; top:0; z-index:30; box-shadow:0 2px 12px rgba(0,36,211,.25); }
+  .logo { width:36px; height:36px; border-radius:9px; background:#fff; color:var(--brand); display:grid; place-items:center;
+          font-weight:800; letter-spacing:-.5px; }
+  .stripe { display:flex; height:4px; } .stripe span { flex:1; }
+  header h1 { font-size:17px; margin:0; font-weight:650; }
+  header small { opacity:.85; display:block; font-size:12px; }
+  .spacer { flex:1; }
+  button { font:inherit; cursor:pointer; border:1px solid var(--line); background:var(--panel2); color:var(--text);
+           padding:7px 13px; border-radius:8px; transition:.15s; }
+  button:hover { border-color:var(--brand); }
+  /* white-on-blue only for the buttons sitting on the blue header bar - not for the buttons inside the export pop-ups */
+  header > button, header .menu > button { background:rgba(255,255,255,.12); color:#fff; border-color:rgba(255,255,255,.35); }
+  header > button:hover, header .menu > button:hover { background:rgba(255,255,255,.22); border-color:#fff; }
+  button.primary { background:var(--brand); border:none; color:#fff; font-weight:600; padding:10px 18px; }
+  button.primary:hover { filter:brightness(1.15); }
+  button.primary:disabled { opacity:.45; cursor:not-allowed; filter:none; }
+  button.ghost { background:transparent; }
+  button.small { padding:4px 9px; font-size:12px; }
+  button.on { background:var(--brand); color:#fff; border-color:var(--brand); }
+  main { display:grid; grid-template-columns:400px minmax(0,1fr); gap:18px; padding:18px 22px 40px; align-items:start; }
+  @media (max-width:1100px) { main { grid-template-columns:1fr; } }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); }
+  .card h2 { margin:0; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--brand); font-weight:700; }
+  [data-theme="dark"] .card h2 { color:var(--pb); }
+  .card-head { display:flex; align-items:center; gap:10px; padding:14px 16px 10px; flex-wrap:wrap; }
+  .card-body { padding:0 16px 16px; }
+  .section { margin-bottom:18px; }
+  .tabs { display:flex; gap:4px; padding:0 16px; border-bottom:1px solid var(--line); }
+  .tab { padding:9px 12px; border:none; border-bottom:2px solid transparent; border-radius:0; background:none; color:var(--muted); font-weight:600; }
+  .tab.active { color:var(--text); border-bottom-color:var(--brand); }
+  .pathbar { display:flex; gap:6px; margin:14px 0 8px; }
+  input[type=text], input[type=number], select, textarea {
+    background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:7px 10px; font:inherit; width:100%; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--brand); }
+  .roots { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+  .chip { padding:3px 9px; border-radius:99px; background:var(--panel2); border:1px solid var(--line); font-size:12px; cursor:pointer; color:var(--muted); }
+  .chip:hover { color:var(--text); border-color:var(--brand); }
+  .list { border:1px solid var(--line); border-radius:10px; max-height:280px; overflow:auto; background:var(--bg); }
+  .row { display:flex; align-items:center; gap:9px; padding:7px 11px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .row:last-child { border-bottom:none; }
+  .row:hover { background:var(--panel2); }
+  .row .name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .row .meta { color:var(--muted); font-size:12px; white-space:nowrap; }
+  .icon { width:18px; text-align:center; }
+  .toolbar { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center; }
+  .drop { border:2px dashed var(--line); border-radius:12px; padding:30px 14px; text-align:center; color:var(--muted); margin-top:14px; transition:.15s; }
+  .drop.over { border-color:var(--brand); background:var(--panel2); color:var(--text); }
+  .note { color:var(--muted); font-size:12px; margin-top:8px; }
+  .bar { height:6px; background:var(--panel2); border-radius:4px; overflow:hidden; margin-top:8px; }
+  .bar > div { height:100%; width:0; background:linear-gradient(90deg,var(--brand),var(--sky)); transition:width .2s; }
+  .sel-item { display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; margin-bottom:6px; background:var(--panel2); }
+  .sel-item .name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .x { color:var(--muted); cursor:pointer; padding:0 4px; } .x:hover { color:var(--coral); }
+  .settings { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+  .settings label, .filters label { font-size:11px; color:var(--muted); display:block; margin-bottom:3px; text-transform:uppercase; letter-spacing:.04em; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; padding:0 16px 16px; }
+  .stat { background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:11px 13px; border-top:3px solid var(--brand); }
+  .stat .k { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.05em; }
+  .stat .v { font-size:22px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .stat .u { font-size:12px; color:var(--muted); font-weight:500; }
+  .stat.bad { border-top-color:var(--coral); } .stat.bad .v { color:var(--coral); }
+  .stat.warn { border-top-color:var(--orange); } .stat.warn .v { color:var(--orange); }
+  .stat.good { border-top-color:var(--teal); } .stat.good .v { color:var(--teal); }
+  .stat.info { border-top-color:var(--sky); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:1400px) { .grid2 { grid-template-columns:1fr; } }
+  .tablewrap { overflow:auto; max-height:560px; border-top:1px solid var(--line); }
+  table { border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; }
+  th, td { padding:7px 10px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line); }
+  th:first-child, td:first-child, .tl { text-align:left; }
+  th { position:sticky; top:0; background:var(--panel2); color:var(--muted); font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; cursor:pointer; user-select:none; z-index:1; }
+  th:hover { color:var(--text); } th .arr { color:var(--brand); }
+  tbody tr { cursor:pointer; } tbody tr:hover { background:var(--panel2); }
+  tr.sel td { background:rgba(0,36,211,.10) !important; }
+  tr.nokrow td { background:rgba(240,100,115,.10); }
+  tr.checkrow td { background:rgba(245,140,53,.10); }
+  .badge { display:inline-block; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700; letter-spacing:.03em; }
+  .b-ok { background:rgba(0,180,143,.15); color:var(--teal); }
+  .b-nok { background:rgba(240,100,115,.18); color:var(--coral); }
+  .b-warn { background:rgba(245,140,53,.18); color:var(--orange); }
+  .b-info { background:rgba(0,169,235,.15); color:var(--sky); }
+  .b-na { background:rgba(140,153,181,.18); color:var(--muted); }
+  .b-run { background:rgba(0,36,211,.14); color:var(--brand); }
+  .light { display:inline-block; width:11px; height:11px; border-radius:50%; margin:0 1px; vertical-align:middle; }
+  .l-OK { background:var(--teal); } .l-NOK { background:var(--coral); } .l-CHECK { background:var(--orange); } .l-NA { background:var(--line); }
+  .filters { display:flex; gap:10px; flex-wrap:wrap; padding:0 16px 14px; align-items:end; }
+  .filters > div { min-width:120px; flex:0 1 auto; } .filters .grow { flex:1; min-width:160px; }
+  .empty { text-align:center; padding:70px 20px; color:var(--muted); } .empty .big { font-size:42px; }
+  .err { color:var(--coral); font-size:13px; margin-top:8px; white-space:pre-line; }
+  .truncate { max-width:230px; overflow:hidden; text-overflow:ellipsis; }
+  .legend { display:flex; gap:14px; padding:0 16px 8px; font-size:12px; color:var(--muted); flex-wrap:wrap; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:-1px; }
+  .sq { display:inline-block; width:14px; height:9px; border-radius:2px; margin-right:5px; vertical-align:0; }
+  svg { display:block; }
+  svg text { fill:var(--muted); font:11px "Segoe UI",system-ui,sans-serif; }
+  svg .lbl { fill:var(--text); }
+  svg .clickable { cursor:pointer; }
+  .req { display:grid; grid-template-columns:44px 1fr 260px; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); }
+  .req:last-child { border-bottom:none; }
+  .req .id { font-weight:800; color:var(--brand); } [data-theme="dark"] .req .id { color:var(--pb); }
+  .req .d { font-size:13px; } .req .d small { color:var(--muted); display:block; font-size:11.5px; }
+  .stack { display:flex; height:16px; border-radius:6px; overflow:hidden; background:var(--panel2); border:1px solid var(--line); }
+  .stack div { height:100%; font-size:10px; color:#fff; text-align:center; line-height:15px; font-weight:700; overflow:hidden; }
+  .tlhead { display:flex; flex-wrap:wrap; gap:8px 18px; padding:0 16px 10px; font-size:13px; }
+  .tlhead b { font-variant-numeric:tabular-nums; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { border:none; border-radius:0; padding:5px 10px; font-size:12px; background:var(--panel2); }
+  .seg button.on { background:var(--brand); color:#fff; }
+  .menu { position:relative; display:inline-block; }
+  .menu .pop { position:absolute; right:0; top:110%; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+               box-shadow:var(--shadow); padding:12px; z-index:40; width:300px; color:var(--text); }
+  /* buttons inside the pop-ups use the panel colours in both themes (incl. hover) */
+  .menu .pop button { background:var(--panel2); color:var(--text); border:1px solid var(--line); }
+  .menu .pop button:hover { background:var(--panel2); color:var(--text); border-color:var(--brand); }
+  .menu .pop button.primary { background:var(--brand); color:#fff; border:1px solid var(--brand); }
+  .menu .pop button.primary:hover { background:var(--brand); color:#fff; filter:brightness(1.15); }
+  .menu .pop label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; display:block; margin:8px 0 3px; }
+  .owner { font-size:12px; padding:5px 11px; border-radius:99px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.35); white-space:nowrap; }
+  .owner:empty { display:none; }
+  .ownership { display:flex; gap:14px; align-items:center; padding:14px 16px; border-left:5px solid var(--brand); }
+  .ownership .sig { font-size:20px; font-weight:800; color:var(--brand); }
+  [data-theme="dark"] .ownership .sig { color:var(--pb); }
+  .check { display:flex; gap:8px; align-items:center; margin-top:12px; font-size:13px; }
+  .check input { width:16px; height:16px; accent-color:var(--brand); }
+  footer.app { text-align:center; color:var(--muted); font-size:12px; padding:0 0 22px; }
+  .pill { display:inline-block; min-width:19px; padding:0 6px; border-radius:99px; font-size:11px; font-weight:800; line-height:18px; text-align:center; white-space:nowrap; }
+  .pill small { font-weight:600; opacity:.92; font-size:10px; }
+  .ststrip { display:inline-flex; align-items:center; gap:3px; }
+  .ststrip .arrow { color:var(--muted); font-size:10px; }
+  .lane-tag { font-size:10px; font-weight:800; padding:1px 5px; border-radius:4px; color:#fff; margin-right:2px; }
+  .lane-A { background:var(--pa); } .lane-B { background:var(--pb); }
+  .stleg { display:flex; flex-wrap:wrap; gap:6px 12px; font-size:12px; color:var(--muted); align-items:center; }
+  .patrow { display:grid; grid-template-columns:minmax(200px,auto) 1fr minmax(170px,auto); gap:10px; align-items:center; padding:5px 0; border-bottom:1px dashed var(--line); }
+  .patrow:last-child { border-bottom:none; }
+  .patbar { height:14px; border-radius:4px; }
+  .callout { margin:0 16px 12px; padding:9px 12px; border-left:4px solid var(--orange); background:rgba(245,140,53,.08); border-radius:6px; font-size:12.5px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">S/O</div>
+  <div>
+    <h1>Start-up Order Viewer</h1>
+    <small>PATH A (master) vs PATH B · ASW start order · RESET_COMPLETE handshake · SysState</small>
+  </div>
+  <div class="spacer"></div>
+  <div id="exportBar" style="display:none;gap:8px">
+    <div class="menu">
+      <button id="csvMenuBtn">⭳ CSV</button>
+      <div class="pop" id="csvPop" hidden>
+        <b>Export CSV</b>
+        <div class="note" style="margin-top:4px">All analysis columns, same format as the CLI script output.</div>
+        <div class="toolbar"><button id="csvFiltered" class="small">Filtered rows</button><button id="csvAll" class="small">All rows</button></div>
+      </div>
+    </div>
+    <div class="menu">
+      <button id="repMenuBtn">⭳ HTML report</button>
+      <div class="pop" id="repPop" hidden>
+        <b>Export HTML report</b>
+        <label>Rows</label>
+        <select id="repRows"><option value="all">All start-ups</option><option value="filtered">Filtered start-ups</option></select>
+        <label>Timelines</label>
+        <select id="repTl">
+          <option value="problems">NOK, CHECK and SysState = 2</option>
+          <option value="selected">Selected start-up only</option>
+          <option value="all">All start-ups</option>
+          <option value="none">None</option>
+        </select>
+        <label>Timeline axis</label>
+        <select id="repMode"><option value="corrected">Corrected (+ raw when offset suspect)</option><option value="both">Corrected and raw</option></select>
+        <div class="toolbar"><button id="repGo" class="primary small" style="padding:6px 14px">⭳ Download</button><button id="repPrev" class="small">Preview in new tab</button></div>
+      </div>
+    </div>
+  </div>
+  <span id="ownerTag" class="owner" title="Responsible owner of this analysis and explanation"></span>
+  <button id="themeBtn" title="Toggle theme">☾ / ☀</button>
+</header>
+<div class="stripe"><span style="background:#0024D3"></span><span style="background:#00A9EB"></span><span style="background:#00B48F"></span><span style="background:#F06473"></span><span style="background:#F58C35"></span><span style="background:#FED34C"></span></div>
+
+<main>
+  <!-- LEFT -->
+  <div>
+    <div class="card section">
+      <div class="card-head"><h2>1 · Choose recordings</h2></div>
+      <div class="tabs">
+        <button class="tab active" data-tab="browse">Browse</button>
+        <button class="tab" data-tab="drop">Drag &amp; drop</button>
+        <button class="tab" data-tab="paste">Paste paths</button>
+      </div>
+      <div class="card-body">
+        <div id="tab-browse">
+          <div class="pathbar">
+            <button id="upBtn" class="small" title="Parent folder">↑</button>
+            <input type="text" id="pathInput" placeholder="Folder path, press Enter">
+            <button id="goBtn" class="small">Go</button>
+          </div>
+          <div class="roots" id="roots"></div>
+          <div class="list" id="browseList"></div>
+          <div class="toolbar">
+            <button id="addChecked" class="small">Add checked</button>
+            <button id="addFolderAll" class="small">Add all MF4 in folder</button>
+            <button id="checkAll" class="small ghost">Check all</button>
+          </div>
+          <div class="note">Files are read in place (nothing copied). Double-click a file to add it.</div>
+          <div class="err" id="browseErr"></div>
+        </div>
+        <div id="tab-drop" hidden>
+          <div class="drop" id="dropZone">
+            <div style="font-size:28px">⬇</div>
+            <div><b>Drop .mf4 files here</b> or <a href="#" id="pickLink" style="color:var(--brand)">choose files</a></div>
+            <input type="file" id="fileInput" multiple accept=".mf4,.mdf" hidden>
+          </div>
+          <div class="bar"><div id="upBar"></div></div>
+          <div class="note" id="upNote">Dropped files are copied to a temp folder first. For large files <b>Browse</b> is faster.</div>
+          <div class="err" id="upErr"></div>
+        </div>
+        <div id="tab-paste" hidden>
+          <textarea id="pasteBox" rows="5" style="margin-top:14px" placeholder="One file or folder path per line"></textarea>
+          <div class="toolbar"><button id="pasteAdd" class="small">Add paths</button></div>
+          <div class="note">Folders are expanded to the .mf4 files directly inside them.</div>
+          <div class="err" id="pasteErr"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card section">
+      <div class="card-head"><h2>2 · Selected &amp; settings</h2><div class="spacer"></div>
+        <span id="selCount" class="note" style="margin:0">0</span><button id="clearSel" class="small ghost">Clear</button></div>
+      <div class="card-body">
+        <div id="selList"><div class="note">Nothing selected yet.</div></div>
+        <div class="settings">
+          <div><label>Same-frame tolerance [ms]</label><input type="number" id="sTol" step="0.05" min="0"></div>
+          <div><label>Offset suspect limit [ms]</label><input type="number" id="sOff" step="0.1" min="0"></div>
+          <div><label>MOV/MOR search window [ms]</label><input type="number" id="sWin" step="5" min="5"></div>
+          <div><label>SysState window [ms]</label><input type="number" id="sSt" step="10" min="10"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="useCache" checked> Use result cache (recordings analysed before open instantly)</label>
+        <div class="settings" style="grid-template-columns:1fr 1fr;margin-top:8px">
+          <div><label>Cache max age [days]</label><input type="number" id="sCacheAge" min="0" step="1" title="0 = unlimited: a cached result stays valid until the recording, the settings or the analysis script change"></div>
+          <div style="align-self:end" class="note" id="cacheAgeNote"></div>
+        </div>
+        <div class="note" id="cacheNote" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"></div>
+        <div class="note">Settings are applied when you press Analyze (≈1 min per new recording). A cached result is reused only for the
+          same recording (size and modification date), same settings, same analysis-script version and — if set — within the max age.</div>
+        <div style="margin-top:14px"><button class="primary" id="runBtn" disabled style="width:100%">▶ Analyze</button></div>
+        <div class="err" id="runErr"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div id="results">
+    <div class="card"><div class="empty"><div class="big">⏱</div>
+      <h3 style="margin:10px 0 4px;color:var(--text)">No analysis yet</h3>
+      Pick one or more MF4 recordings on the left, then press <b>Analyze</b>.</div></div>
+  </div>
+</main>
+<footer class="app" id="appFooter"></footer>
+
+<template id="resultsTpl">
+  <div class="card section" id="progCard">
+    <div class="card-head"><h2>Progress</h2><div class="spacer"></div><span id="progText" class="note" style="margin:0"></span></div>
+    <div class="card-body"><div id="progList"></div><div class="bar" id="progBarWrap"><div id="progBar"></div></div></div>
+  </div>
+  <div class="card section">
+    <div class="card-head"><h2>Summary</h2></div>
+    <div class="cards" id="cards"></div>
+  </div>
+  <div class="card section">
+    <div class="card-head"><h2>Requirement check</h2><div class="spacer"></div>
+      <span class="legend" style="padding:0"><span><span class="light l-OK"></span> OK</span><span><span class="light l-NOK"></span> NOK</span><span><span class="light l-CHECK"></span> check</span><span><span class="light l-NA"></span> n/a</span></span></div>
+    <div class="card-body" id="reqBox"></div>
+  </div>
+  <div class="grid2 section">
+    <div class="card">
+      <div class="card-head"><h2>Cause → effect</h2><div class="spacer"></div><span class="note" style="margin:0">corrected PB − PA vs SysState = 2</span></div>
+      <div class="legend"><span><span class="dot" style="background:var(--coral)"></span>SysState = 2</span><span><span class="dot" style="background:var(--teal)"></span>no 2</span><span><span class="dot" style="background:var(--grey)"></span>no StSys signal</span><span><span class="dot" style="background:transparent;border:2px solid var(--orange)"></span>offset suspect</span></div>
+      <div class="card-body" style="padding-top:0"><div id="chScatter"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Start delay in 1 ms frames</h2><div class="spacer"></div><span class="note" style="margin:0">PB start − PA start (corrected)</span></div>
+      <div class="legend"><span><span class="sq" style="background:var(--coral)"></span>SysState = 2</span><span><span class="sq" style="background:var(--teal)"></span>no 2</span><span><span class="sq" style="background:var(--grey)"></span>no StSys signal</span></div>
+      <div class="card-body" style="padding-top:0"><div id="chHist"></div></div>
+    </div>
+  </div>
+  <div class="card section">
+    <div class="card-head"><h2>SysState per path</h2><div class="spacer"></div><span class="note" style="margin:0">which path shows which value after release (SysState_u8)</span></div>
+    <div class="card-body" style="padding-top:0"><div id="stLegend" style="margin-bottom:8px"></div><div id="chStPat"></div></div>
+  </div>
+  <div class="card section">
+    <div class="card-head"><h2>Measurement quality — PATH1/PATH2 clock offset per start-up</h2><div class="spacer"></div><span class="note" style="margin:0">band = ± offset suspect limit · points outside: raw timestamps are misleading</span></div>
+    <div class="card-body" style="padding-top:0"><div id="chOffset"></div></div>
+  </div>
+  <div class="grid2 section">
+    <div class="card"><div class="card-head"><h2>Scenarios</h2><span class="note" style="margin:0">resets per path in a start-up</span></div><div class="card-body" style="padding-top:0"><div id="chScen"></div></div></div>
+    <div class="card"><div class="card-head"><h2>Release reasons</h2></div>
+      <div class="legend"><span><span class="sq" style="background:var(--pa)"></span>PATH A</span><span><span class="sq" style="background:var(--pb)"></span>PATH B</span></div>
+      <div class="card-body" style="padding-top:0"><div id="chRel"></div></div></div>
+  </div>
+  <div class="card section" id="tlCard">
+    <div class="card-head"><h2>Start-up timeline</h2><div class="spacer"></div>
+      <div class="seg" id="modeSeg"><button data-m="corrected" class="on">Corrected</button><button data-m="raw">Raw timestamps</button></div>
+      <div class="seg" id="zoomSeg"><button data-z="release" class="on">Release ± </button><button data-z="debounce">Debounce</button><button data-z="full">Whole start-up</button></div>
+      <button id="prevBtn" class="small">◀</button><button id="nextBtn" class="small">▶</button>
+    </div>
+    <div class="tlhead" id="tlHead"></div>
+    <div id="tlCallout"></div>
+    <div class="card-body" style="padding-top:0"><div id="tlSvg"></div>
+      <div class="legend" style="padding:6px 0 0">
+        <span><span class="sq" style="background:var(--pa)"></span>PATH A (P1, master)</span><span><span class="sq" style="background:var(--pb)"></span>PATH B (P2)</span>
+        <span><span class="sq" style="background:var(--yellow);outline:1px solid var(--orange)"></span>25 ms debounce</span>
+        <span><span class="sq" style="background:repeating-linear-gradient(45deg,var(--grey) 0 3px,transparent 3px 6px)"></span>reset / reboot (no data)</span>
+        <span>▲ ASW start (first MOR) · ● first MOV · ✕ reset counter step</span><span>→ IPC frame (orange dashed: "received before sent" ⇒ clock offset)</span>
+      </div>
+      <div id="tlStLegend" style="margin-top:6px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Start-ups</h2><div class="spacer"></div><span id="rowCount" class="note" style="margin:0"></span></div>
+    <div class="filters">
+      <div><label>File</label><select id="fFile"></select></div>
+      <div><label>Scenario</label><select id="fScen"></select></div>
+      <div><label>Order verdict</label><select id="fVerd"></select></div>
+      <div><label>Result</label><select id="fRes"></select></div>
+      <div><label>SysState = 2</label><select id="fSt"><option value="">All</option><option value="Y">Yes (A or B)</option><option value="A2">2 on PATH A</option><option value="B2">2 on PATH B</option><option value="N">No</option></select></div>
+      <div><label>Offset flag</label><select id="fOff"></select></div>
+      <div class="grow"><label>Search</label><input type="text" id="fText" placeholder="file, time, reason…"></div>
+    </div>
+    <div class="tablewrap"><table id="rowTable"></table></div>
+  </div>
+</template>
+
+<script>
+const $ = s => document.querySelector(s);
+const selected = new Map();
+let cur = { path:'', parent:'', dirs:[], files:[] };
+let job = null, poll = null, selKey = null, tlMode = 'corrected', tlZoom = 'release';
+let sort = { key:'n', dir:1 };
+let defaults = { window_ms:60, stsys_window_ms:200, same_frame_tol_ms:0.2, offset_suspect_ms:1.0 };
+
+/* ---------------- helpers ---------------- */
+const fmtSize = b => b>1e9 ? (b/1e9).toFixed(2)+' GB' : b>1e6 ? (b/1e6).toFixed(1)+' MB' : (b/1e3).toFixed(0)+' KB';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const isN = v => v === null || v === undefined || (typeof v === 'number' && isNaN(v));
+const f3 = v => isN(v) ? '—' : Number(v).toFixed(3);
+const f2 = v => isN(v) ? '—' : Number(v).toFixed(2);
+const f6 = v => isN(v) ? '—' : Number(v).toFixed(6);
+async function api(url, body) {
+  const r = await fetch(url, body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : {});
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+const BADGE = { OK:'b-ok', NOK:'b-nok', CHECK:'b-warn', INFO:'b-info', PA_FIRST:'b-ok', SAME_FRAME:'b-ok', PB_BEFORE_PA:'b-nok',
+                INCONCLUSIVE:'b-warn', OFFSET_SUSPECT:'b-warn', NO_OFFSET:'b-na', Y:'b-nok', N:'b-ok', NA:'b-na' };
+const badge = t => `<span class="badge ${BADGE[t] || 'b-na'}">${esc(t ?? 'NA')}</span>`;
+const settingsTol = () => job ? job.settings.same_frame_tol_ms : defaults.same_frame_tol_ms;
+const settingsOff = () => job ? job.settings.offset_suspect_ms : defaults.offset_suspect_ms;
+const deltaOf = r => !isN(r.corrected_diff_mor_ms) ? r.corrected_diff_mor_ms : r.offsetfree_diff_ms;
+const stsysAny = r => (r.p1_stsys2 === 'Y' || r.p2_stsys2 === 'Y') ? 'Y' : (r.p1_stsys2 === 'N' || r.p2_stsys2 === 'N') ? 'N' : 'NA';
+const stsysMs = r => Math.max(isN(r.p1_stsys2_ms) ? 0 : r.p1_stsys2_ms, isN(r.p2_stsys2_ms) ? 0 : r.p2_stsys2_ms);
+
+/* ---------------- SysState values (CM_SysState) ---------------- */
+const STSYS = { 0:['Vollsystem verfügbar','#00B48F'], 1:['eingeschränkt','#FED34C'], 2:['Rückfallebene ECU 1 auf Primär','#F06473'],
+                3:['Rückfallebene ECU 2 auf Sekundär','#F58C35'], 4:['Systemausfall','#B3123A'], 6:['Init','#A3ADC2'], 7:['Fehler','#B3123A'] };
+const stName = v => (STSYS[v] || ['unknown value'])[0];
+const stCol = v => v === 7 ? 'repeating-linear-gradient(45deg,#B3123A 0 4px,#6E0B24 4px 8px)' : (STSYS[v] || [0, '#7D879C'])[1];
+const stTxt = v => v === 1 ? '#0B1A3A' : '#fff';
+const stFill = v => (STSYS[v] || [0, '#7D879C'])[1];             // SVG fill (no gradient)
+function parseSeq(s) {
+  if (!s || s === 'NA') return null;
+  return s.split('>').map(p => { const m = p.match(/^(-?\d+)(?:\(([\d.]+)ms\))?$/); return m ? { v:+m[1], ms:m[2] === undefined ? null : +m[2] } : null; }).filter(Boolean);
+}
+function stsysPill(v, ms, showMs) {
+  const tip = `SysState = ${v} · ${stName(v)}` + (ms === null ? ' (until the end of the StSys window)' : ` · ${ms} ms`);
+  return `<span class="pill" style="background:${stCol(v)};color:${stTxt(v)}" title="${esc(tip)}">${v}${showMs && ms !== null ? `<small> ${Number(ms).toFixed(1)}ms</small>` : ''}</span>`;
+}
+function stsysStrip(seq, L) {
+  const p = parseSeq(seq);
+  if (!p) return `<span class="note" style="margin:0" title="SysState not recorded for PATH ${L}">—</span>`;
+  return `<span class="ststrip"><span class="lane-tag lane-${L}">${L}</span>` +
+    p.map((x, i) => (i ? '<span class="arrow">▸</span>' : '') + stsysPill(x.v, x.ms, x.v !== 6 && x.v !== 0)).join('') + '</span>';
+}
+const stsysLegend = () => `<div class="stleg"><b style="color:var(--text)">SysState</b>` +
+  [0, 1, 2, 3, 4, 6, 7].map(v => `<span>${stsysPill(v, null, false)} ${esc(stName(v))}</span>`).join('') + '</div>';
+const seqPattern = s => { const p = parseSeq(s); return p ? p.map(x => x.v).join('>') : 'not recorded'; };
+function stsysPatternsHtml(rows) {
+  if (!rows.length) return '<div class="note">—</div>';
+  let h = '';
+  [['A', 'p1'], ['B', 'p2']].forEach(([L, k]) => {
+    const cnt = countBy(rows, r => seqPattern(r[k + '_stsys_sequence']));
+    const ks = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
+    h += `<div style="margin:6px 0 4px"><span class="lane-tag lane-${L}">PATH ${L}</span>
+      <span class="note" style="margin:0">${L === 'A' ? 'P1 (master)' : 'P2'} · value sequence after release</span></div>`;
+    ks.forEach(p => {
+      const n = cnt[p], pct = n / rows.length * 100;
+      const vals = p === 'not recorded' ? null : p.split('>').map(Number);
+      const twos = rows.filter(r => seqPattern(r[k + '_stsys_sequence']) === p).map(r => r[k + '_stsys2_ms']).filter(v => !isN(v) && v > 0);
+      const avg2 = twos.length ? ` · Ø "2" ${(twos.reduce((a, b) => a + b, 0) / twos.length).toFixed(2)} ms` : '';
+      const has2 = vals && vals.includes(2);
+      h += `<div class="patrow"><div class="ststrip">${vals ? vals.map((v, i) => (i ? '<span class="arrow">▸</span>' : '') + stsysPill(v, null, false)).join('') : '<span class="note" style="margin:0">not recorded</span>'}</div>
+        <div><div class="patbar" style="width:${Math.max(pct, 1)}%;background:${has2 ? 'var(--coral)' : vals ? 'var(--teal)' : 'var(--grey)'}"></div></div>
+        <div class="note" style="margin:0;text-align:right"><b style="color:var(--text)">${n}</b> start-ups (${pct.toFixed(0)}%)${avg2}</div></div>`;
+    });
+  });
+  return h;
+}
+
+/* ---------------- requirements ---------------- */
+const LEGIT_B = ['MASTER_COMPLETE','TIMEOUT_300MS','NO_WAIT','MAX_RESETS'];
+const LEGIT_A = ['DEBOUNCE_25MS','TIMEOUT_300MS','NO_WAIT','MAX_RESETS'];
+const REQS = [
+  { id:'R1', t:'PB releases only on a legitimate trigger', d:'PA RESET_COMPLETE, 300 ms timeout, no-wait (≥2 resets) or max resets',
+    f:r => LEGIT_B.includes(r.p2_release_reason) ? 'OK' : r.p2_release_reason === 'OTHER' || r.p2_release_reason === 'NO_RELEASE' ? 'CHECK' : 'NA' },
+  { id:'R2', t:'PA releases after its 25 ms sync debounce', d:'when the handshake rule applies (PB released on PA COMPLETE); timeout / no-wait / max resets accepted',
+    f:r => r.order_rule !== 'ENFORCED' ? 'NA' : LEGIT_A.includes(r.p1_release_reason) ? 'OK' : 'CHECK' },
+  { id:'R3', t:'PB ASW never starts before PA ASW', d:'Order_Result: PB_BEFORE_PA confirmed by both methods = NOK, methods disagree = check',
+    f:r => r.Order_Result === 'NOK' ? 'NOK' : r.Order_Result === 'CHECK' ? 'CHECK' : r.Order_Result === 'OK' ? 'OK' : 'NA' },
+  { id:'R4', t:'SysState never shows 2 after release', d:'SysState_u8 on PATH1 / PATH2 within the StSys window',
+    f:r => { const s = stsysAny(r); return s === 'Y' ? 'NOK' : s === 'N' ? 'OK' : 'NA'; } },
+];
+const lights = r => REQS.map(q => `<span class="light l-${q.f(r)}" title="${q.id}: ${q.f(r)}"></span>`).join('');
+
+/* ---------------- theme / tabs ---------------- */
+$('#themeBtn').onclick = () => {
+  const d = document.documentElement;
+  d.dataset.theme = d.dataset.theme === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem('soTheme', d.dataset.theme); } catch (e) {}
+  if (job) renderResults();
+};
+try { if (localStorage.getItem('soTheme')) document.documentElement.dataset.theme = localStorage.getItem('soTheme'); } catch (e) {}
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+  ['browse','drop','paste'].forEach(n => $('#tab-'+n).hidden = n !== t.dataset.tab);
+});
+
+/* ---------------- selection / browse / paste / upload (same as micro-delay GUI) ---------------- */
+function addFiles(list) { list.forEach(f => selected.set(f.path, { name:f.name, size:f.size })); renderSelected(); }
+function renderSelected() {
+  const el = $('#selList');
+  $('#selCount').textContent = selected.size + ' file' + (selected.size === 1 ? '' : 's');
+  $('#runBtn').disabled = selected.size === 0 || (job && job.state === 'running');
+  if (!selected.size) { el.innerHTML = '<div class="note">Nothing selected yet.</div>'; return; }
+  el.innerHTML = '';
+  selected.forEach((v, p) => {
+    const d = document.createElement('div'); d.className = 'sel-item';
+    d.innerHTML = `<span class="icon">📄</span><span class="name" title="${esc(p)}">${esc(v.name)}</span>
+      <span class="meta note" style="margin:0">${fmtSize(v.size)}</span><span class="x" title="Remove">✕</span>`;
+    d.querySelector('.x').onclick = () => { selected.delete(p); renderSelected(); };
+    el.appendChild(d);
+  });
+}
+$('#clearSel').onclick = () => { selected.clear(); renderSelected(); };
+async function browse(path) {
+  $('#browseErr').textContent = '';
+  try { cur = await api('/api/browse?path=' + encodeURIComponent(path || '')); }
+  catch (e) { $('#browseErr').textContent = e.message; return; }
+  $('#pathInput').value = cur.path;
+  const L = $('#browseList'); L.innerHTML = '';
+  cur.dirs.forEach(d => {
+    const r = document.createElement('div'); r.className = 'row';
+    r.innerHTML = `<span class="icon">📁</span><span class="name">${esc(d.name)}</span>`;
+    r.onclick = () => browse(d.path); L.appendChild(r);
+  });
+  cur.files.forEach(f => {
+    const r = document.createElement('div'); r.className = 'row';
+    r.innerHTML = `<input type="checkbox" data-p="${esc(f.path)}"><span class="name" title="${esc(f.name)}">${esc(f.name)}</span><span class="meta">${fmtSize(f.size)}</span>`;
+    r.onclick = ev => { if (ev.target.tagName !== 'INPUT') { const c = r.querySelector('input'); c.checked = !c.checked; } };
+    r.ondblclick = () => addFiles([f]);
+    L.appendChild(r);
+  });
+  if (!cur.dirs.length && !cur.files.length) L.innerHTML = '<div class="note" style="padding:14px">Empty folder.</div>';
+}
+$('#goBtn').onclick = () => browse($('#pathInput').value.trim());
+$('#pathInput').addEventListener('keydown', e => { if (e.key === 'Enter') browse(e.target.value.trim()); });
+$('#upBtn').onclick = () => cur.parent ? browse(cur.parent) : loadRoots(true);
+$('#addChecked').onclick = () => {
+  const ps = [...document.querySelectorAll('#browseList input:checked')].map(c => c.dataset.p);
+  addFiles(cur.files.filter(f => ps.includes(f.path)));
+};
+$('#addFolderAll').onclick = () => addFiles(cur.files);
+$('#checkAll').onclick = () => document.querySelectorAll('#browseList input').forEach(c => c.checked = true);
+let author = '';
+const ownerOf = () => (job && job.author) || author || 'unknown';
+function setOwner(a) {
+  author = a || '';
+  $('#ownerTag').textContent = author ? '👤 Owner: ' + author : '';
+  $('#appFooter').innerHTML = author ? `Start-up Order Viewer · analysis and explanation owned by <b>${esc(author)}</b>` : '';
+}
+const cacheAge = () => { const v = parseFloat($('#sCacheAge').value); return isNaN(v) || v < 0 ? 0 : v; };
+function renderCacheAge() {
+  const d = cacheAge();
+  $('#cacheAgeNote').textContent = d > 0 ? `results older than ${d} day${d === 1 ? '' : 's'} are re-analysed and deleted` : 'unlimited (0): no time-based expiry';
+}
+function renderCache(c) {
+  if (!c) return;
+  const mb = (c.size / 1e6).toFixed(1);
+  const oldest = c.oldest ? new Date(c.oldest * 1000).toLocaleString() : null;
+  $('#cacheNote').innerHTML = `<span>Cache: <b>${c.entries}</b> recording result${c.entries === 1 ? '' : 's'} · ${mb} MB${oldest ? ` · oldest ${esc(oldest)}` : ''}</span>` +
+    (c.entries ? `<button class="small ghost" id="cacheClr" title="${esc(c.dir)}">Clear cache</button>` : '');
+  const b = $('#cacheClr');
+  if (b) b.onclick = async () => { if (!confirm('Delete all cached analysis results?\n(MF4 files are not touched.)')) return;
+    try { renderCache(await api('/api/cache_clear', {})); } catch (e) { $('#runErr').textContent = e.message; } };
+}
+async function refreshCache() { try { renderCache(await api('/api/cache')); } catch (e) {} }
+$('#sCacheAge').addEventListener('input', () => {
+  renderCacheAge();
+  try { localStorage.setItem('soCacheMaxDays', String(cacheAge())); } catch (e) {}
+});
+async function loadRoots(go) {
+  const r = await api('/api/roots');
+  if (r.defaults) defaults = r.defaults;
+  setOwner(r.author); renderCache(r.cache);
+  let age = r.cache_max_days || 0;
+  try { const s = localStorage.getItem('soCacheMaxDays'); if (s !== null && s !== '') age = s; } catch (e) {}
+  $('#sCacheAge').value = age; renderCacheAge();
+  $('#sTol').value = defaults.same_frame_tol_ms; $('#sOff').value = defaults.offset_suspect_ms;
+  $('#sWin').value = defaults.window_ms; $('#sSt').value = defaults.stsys_window_ms;
+  $('#roots').innerHTML = '';
+  r.roots.forEach(x => {
+    const c = document.createElement('span'); c.className = 'chip'; c.textContent = x.name; c.title = x.path;
+    c.onclick = () => browse(x.path); $('#roots').appendChild(c);
+  });
+  if (go) browse(r.start || (r.roots[0] && r.roots[0].path));
+}
+$('#pasteAdd').onclick = async () => {
+  $('#pasteErr').textContent = '';
+  try {
+    const r = await api('/api/resolve', { paths:$('#pasteBox').value.split(/\r?\n/) });
+    addFiles(r.files); $('#pasteErr').textContent = r.errors.join('\n');
+    if (r.files.length) $('#pasteBox').value = '';
+  } catch (e) { $('#pasteErr').textContent = e.message; }
+};
+const dz = $('#dropZone');
+$('#pickLink').onclick = e => { e.preventDefault(); $('#fileInput').click(); };
+$('#fileInput').onchange = e => uploadAll([...e.target.files]);
+dz.ondragover = e => { e.preventDefault(); dz.classList.add('over'); };
+dz.ondragleave = () => dz.classList.remove('over');
+dz.ondrop = e => { e.preventDefault(); dz.classList.remove('over'); uploadAll([...e.dataTransfer.files]); };
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => { e.preventDefault(); if (!dz.contains(e.target) && e.dataTransfer.files.length) uploadAll([...e.dataTransfer.files]); });
+async function uploadAll(files) {
+  $('#upErr').textContent = '';
+  files = files.filter(f => /\.(mf4|mdf)$/i.test(f.name));
+  if (!files.length) { $('#upErr').textContent = 'Only .mf4 / .mdf files are accepted.'; return; }
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    await new Promise(res => {
+      const x = new XMLHttpRequest();
+      x.open('POST', '/api/upload?name=' + encodeURIComponent(f.name));
+      x.upload.onprogress = ev => { if (ev.lengthComputable) $('#upBar').style.width = (ev.loaded / ev.total * 100) + '%';
+        $('#upNote').textContent = `Uploading ${f.name} (${i+1}/${files.length})…`; };
+      x.onload = () => { try { const j = JSON.parse(x.responseText); if (x.status === 200) addFiles([j]); else $('#upErr').textContent = j.error; }
+                         catch (e) { $('#upErr').textContent = 'Upload failed'; } res(); };
+      x.onerror = () => { $('#upErr').textContent = 'Upload failed: ' + f.name; res(); };
+      x.send(f);
+    });
+  }
+  $('#upBar').style.width = '0'; $('#upNote').textContent = 'Upload finished — files were added to the selection.';
+}
+
+/* ---------------- run ---------------- */
+$('#runBtn').onclick = async () => {
+  $('#runErr').textContent = '';
+  const settings = { same_frame_tol_ms:$('#sTol').value, offset_suspect_ms:$('#sOff').value, window_ms:$('#sWin').value, stsys_window_ms:$('#sSt').value };
+  try {
+    const r = await api('/api/analyze', { paths:[...selected.keys()], settings, use_cache:$('#useCache').checked, cache_max_days:cacheAge() });
+    job = { id:r.job, state:'running', files:[], rows:[], timelines:{}, settings:{} };
+    selKey = null;
+    $('#results').innerHTML = ''; $('#results').appendChild($('#resultsTpl').content.cloneNode(true));
+    bindResultControls();
+    $('#runBtn').disabled = true; $('#exportBar').style.display = 'none';
+    history.replaceState(null, '', '?job=' + r.job);
+    clearInterval(poll); poll = setInterval(tick, 1000); tick();
+  } catch (e) { $('#runErr').textContent = e.message; }
+};
+// reload keeps the results: ?job=<id> re-attaches to a job of the running server
+async function resumeJob(id) {
+  try { await api('/api/job?id=' + id); } catch (e) { history.replaceState(null, '', location.pathname); return; }
+  job = { id, state:'running', files:[], rows:[], timelines:{}, settings:{} };
+  $('#results').innerHTML = ''; $('#results').appendChild($('#resultsTpl').content.cloneNode(true));
+  bindResultControls();
+  const p = new URLSearchParams(location.search);
+  if (p.get('sel')) selKey = p.get('sel');
+  if (p.get('mode')) { tlMode = p.get('mode'); const b = document.querySelector(`#modeSeg button[data-m="${tlMode}"]`); if (b) segOn('#modeSeg', b); }
+  if (p.get('zoom')) { tlZoom = p.get('zoom'); const b = document.querySelector(`#zoomSeg button[data-z="${tlZoom}"]`); if (b) segOn('#zoomSeg', b); }
+  clearInterval(poll); poll = setInterval(tick, 1000); tick();
+}
+let lastRowCount = -1;
+async function tick() {
+  try { job = await api('/api/job?id=' + job.id); } catch (e) { return; }
+  if (job.rows.length !== lastRowCount || job.state === 'done') { lastRowCount = job.rows.length; renderResults(); } else renderProgress();
+  if (job.state === 'done') {
+    clearInterval(poll); renderSelected(); refreshCache();
+    $('#exportBar').style.display = job.rows.length ? 'flex' : 'none';
+    if (new URLSearchParams(location.search).get('preview') === 'report' && job.rows.length) {
+      const html = buildReport(rowsAll(), rowsAll().filter(r => r.Order_Result !== 'OK' || stsysAny(r) === 'Y').slice(0, 3), 'corrected');
+      document.open(); document.write(html); document.close();
+    }
+  }
+}
+
+/* ---------------- results ---------------- */
+function bindResultControls() {
+  ['fFile','fScen','fVerd','fRes','fSt','fOff'].forEach(i => $('#'+i).onchange = renderTable);
+  $('#fText').oninput = renderTable;
+  document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => { tlMode = b.dataset.m; segOn('#modeSeg', b); renderTimeline(); });
+  document.querySelectorAll('#zoomSeg button').forEach(b => b.onclick = () => { tlZoom = b.dataset.z; segOn('#zoomSeg', b); renderTimeline(); });
+  $('#prevBtn').onclick = () => stepSel(-1); $('#nextBtn').onclick = () => stepSel(1);
+  ['#chScatter','#chOffset'].forEach(id => $(id).addEventListener('click', e => {
+    const k = e.target.closest('[data-key]'); if (k) selectRow(k.dataset.key, true);
+  }));
+}
+function segOn(sel, b) { document.querySelectorAll(sel + ' button').forEach(x => x.classList.toggle('on', x === b)); }
+function rowsAll() { return job.rows.map((r, i) => ({ ...r, n:i + 1 })); }
+
+function renderProgress() {
+  if (!$('#progList')) return;
+  const done = job.files.filter(f => ['done','skipped','error'].includes(f.status)).length;
+  $('#progText').textContent = `${done} / ${job.files.length} files` + (job.state === 'done' ? ' — finished' : ' — analysing (≈1 min per file)…');
+  $('#progBar').style.width = (job.files.length ? done / job.files.length * 100 : 0) + '%';
+  $('#progBarWrap').style.display = job.state === 'done' ? 'none' : '';
+  $('#progList').innerHTML = job.files.map(f => {
+    const cls = f.status === 'done' ? 'b-ok' : f.status === 'running' ? 'b-run' : f.status === 'queued' ? 'b-na' : f.status === 'skipped' ? 'b-warn' : 'b-nok';
+    const w = (f.warnings || []).length ? ` title="${esc(f.warnings.join('\n'))}"` : '';
+    const ch = f.cached ? `<span class="badge b-info" title="Result loaded from cache (analysed ${esc(f.cached)})">⚡ cached</span>` : '';
+    return `<div class="sel-item"><span class="name" title="${esc(f.path)}">${esc(f.name)}</span>
+      <span class="note" style="margin:0"${w}>${[f.count ? f.count + ' start-ups' : '', esc(f.message || ''), f.cached ? 'analysed ' + esc(f.cached) : '', f.elapsed ? f.elapsed + ' s' : ''].filter(Boolean).join(' · ')}</span>
+      ${ch}<span class="badge ${cls}">${f.status}</span></div>`;
+  }).join('');
+}
+
+function renderResults() {
+  renderProgress();
+  const rows = rowsAll();
+  renderCards(rows);
+  $('#reqBox').innerHTML = reqHtml(rows);
+  const W = el => Math.max((el && el.clientWidth) || 600, 420);
+  $('#chScatter').innerHTML = svgScatter(rows, W($('#chScatter')), true);
+  $('#chHist').innerHTML = svgHist(rows, W($('#chHist')));
+  $('#chOffset').innerHTML = svgOffset(rows, W($('#chOffset')), true);
+  $('#stLegend').innerHTML = stsysLegend(); $('#chStPat').innerHTML = stsysPatternsHtml(rows);
+  $('#chScen').innerHTML = svgBars(countBy(rows, r => r.scenario), W($('#chScen')), 'var(--pa)');
+  $('#chRel').innerHTML = svgBars2(rows, W($('#chRel')));
+  syncFilters(rows);
+  if (!selKey && rows.length) {
+    const pick = rows.find(r => r.Order_Result === 'NOK') || rows.find(r => r.Order_Result === 'CHECK') || rows.find(r => stsysAny(r) === 'Y') || rows[0];
+    selKey = pick.key;
+  }
+  renderTable();
+  renderTimeline();
+}
+function countBy(rows, fn) { const m = {}; rows.forEach(r => { const k = fn(r) ?? 'NA'; m[k] = (m[k] || 0) + 1; }); return m; }
+
+function kpis(rows) {
+  const offs = rows.map(r => r.clock_offset_ms).filter(v => !isN(v));
+  return {
+    n:rows.length, files:new Set(rows.map(r => r.file_name)).size,
+    nok:rows.filter(r => r.Order_Result === 'NOK').length, check:rows.filter(r => r.Order_Result === 'CHECK').length,
+    same:rows.filter(r => r.Order_Verdict === 'SAME_FRAME').length, paf:rows.filter(r => r.Order_Verdict === 'PA_FIRST').length,
+    pbb:rows.filter(r => r.Order_Verdict === 'PB_BEFORE_PA').length,
+    st2:rows.filter(r => stsysAny(r) === 'Y').length, stn:rows.filter(r => stsysAny(r) === 'N').length,
+    st2a:rows.filter(r => r.p1_stsys2 === 'Y').length, st2b:rows.filter(r => r.p2_stsys2 === 'Y').length,
+    susp:rows.filter(r => r.Offset_Flag === 'OFFSET_SUSPECT').length,
+    maxoff:offs.length ? Math.max(...offs.map(Math.abs)) : null, enf:rows.filter(r => r.order_rule === 'ENFORCED').length,
+  };
+}
+function cardsHtml(rows) {
+  const k = kpis(rows);
+  const S = (key, v, u, cls = '') => `<div class="stat ${cls}"><div class="k">${key}</div><div class="v">${v}<span class="u"> ${u}</span></div></div>`;
+  return S('Start-ups', k.n, `in ${k.files} file${k.files === 1 ? '' : 's'}`, 'info') +
+    S('PB before PA (NOK)', k.nok, `of ${k.enf} checked`, k.nok ? 'bad' : 'good') +
+    S('Needs check', k.check, '', k.check ? 'warn' : 'good') +
+    S('Same 1 ms frame', k.same, '', 'good') +
+    S('PA first', k.paf, '', 'info') +
+    S('SysState = 2', k.st2, `of ${k.st2 + k.stn} · A ${k.st2a} / B ${k.st2b}`, k.st2 ? 'bad' : 'good') +
+    S('Offset suspect', k.susp, '', k.susp ? 'warn' : 'good') +
+    S('Max |clock offset|', k.maxoff === null ? '—' : k.maxoff.toFixed(2), 'ms', k.maxoff > settingsOff() ? 'warn' : 'good');
+}
+function renderCards(rows) { $('#cards').innerHTML = rows.length ? cardsHtml(rows) : '<div class="note">No start-ups yet.</div>'; }
+function reqHtml(rows) {
+  return REQS.map(q => {
+    const c = { OK:0, NOK:0, CHECK:0, NA:0 }; rows.forEach(r => c[q.f(r)]++);
+    const tot = rows.length || 1;
+    const seg = (k, col) => c[k] ? `<div style="width:${c[k] / tot * 100}%;background:${col}" title="${k}: ${c[k]}">${c[k]}</div>` : '';
+    return `<div class="req"><div class="id">${q.id}</div><div class="d">${esc(q.t)}<small>${esc(q.d)}</small></div>
+      <div><div class="stack">${seg('OK','var(--teal)')}${seg('NOK','var(--coral)')}${seg('CHECK','var(--orange)')}${seg('NA','var(--grey)')}</div>
+      <div class="note" style="margin-top:3px">OK ${c.OK} · NOK ${c.NOK} · check ${c.CHECK} · n/a ${c.NA}</div></div></div>`;
+  }).join('');
+}
+
+/* ---------------- charts (pure SVG builders, reused by the HTML report) ---------------- */
+function niceStep(max, n) {
+  const raw = Math.max(max, 1e-9) / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  return [1, 2, 2.5, 5, 10].map(k => k * mag).find(v => v >= raw);
+}
+function svgScatter(rows, W, interactive) {
+  const H = 260, m = { l:48, r:14, t:12, b:34 };
+  const pts = rows.filter(r => !isN(deltaOf(r)));
+  if (!pts.length) return '<div class="note">No order data (IPC counters not recorded).</div>';
+  const xs = pts.map(deltaOf), ys = pts.map(stsysMs);
+  const ystep = niceStep(Math.max(5, ...ys), 4), ytop = Math.ceil(Math.max(5, ...ys) / ystep) * ystep;
+  const xmin = Math.min(-1, ...xs) - .3, xmax = Math.max(3, ...xs) + .3, ymax = ytop * 1.08;
+  const X = v => m.l + (v - xmin) / (xmax - xmin) * (W - m.l - m.r), Y = v => m.t + (1 - v / ymax) * (H - m.t - m.b);
+  const tol = settingsTol();
+  let s = `<svg width="100%" viewBox="0 0 ${W} ${H}">`;
+  s += `<rect x="${X(-tol)}" y="${m.t}" width="${X(tol) - X(-tol)}" height="${H - m.t - m.b}" fill="var(--teal)" opacity=".10"/>`;
+  s += `<rect x="${m.l}" y="${m.t}" width="${X(-tol) - m.l}" height="${H - m.t - m.b}" fill="var(--coral)" opacity=".06"/>`;
+  for (let v = Math.ceil(xmin); v <= xmax; v++) s += `<line x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${H - m.b}" stroke="var(--line)"/><text x="${X(v)}" y="${H - m.b + 14}" text-anchor="middle">${v}</text>`;
+  for (let v = 0; v <= ytop + 1e-9; v += ystep) s += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" opacity=".6"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${+v.toFixed(2)}</text>`;
+  s += `<text x="${W - m.r}" y="${m.t + 12}" text-anchor="end">${pts.length} start-ups · identical values overlap → counts in the frame histogram</text>`;
+  s += `<line x1="${X(0)}" x2="${X(0)}" y1="${m.t}" y2="${H - m.b}" stroke="var(--muted)" stroke-width="1.3"/>`;
+  s += `<text x="${X(-tol) - 4}" y="${m.t + 12}" text-anchor="end" style="fill:var(--coral)">PB before PA</text><text x="${X(tol) + 4}" y="${m.t + 12}" class="lbl">PB after PA →</text>`;
+  pts.forEach((r, i) => {
+    const st = stsysAny(r), col = st === 'Y' ? 'var(--coral)' : st === 'N' ? 'var(--teal)' : 'var(--grey)';
+    const jitter = st === 'Y' ? 0 : ((i * 37) % 11 - 5) * .6;
+    const ring = r.Offset_Flag === 'OFFSET_SUSPECT' ? `stroke="var(--orange)" stroke-width="2.2"` : `stroke="var(--panel)" stroke-width="1"`;
+    s += `<circle ${interactive ? `class="clickable" data-key="${esc(r.key)}"` : ''} cx="${X(deltaOf(r))}" cy="${Y(stsysMs(r)) + jitter}" r="${r.key === selKey && interactive ? 7 : 5}" fill="${col}" ${ring} opacity=".9">
+      <title>${esc(r.file_name)} #${r.startup_idx} · ${r.scenario}\nPB−PA ${f3(deltaOf(r))} ms · SysState=2 ${f2(stsysMs(r))} ms · ${r.Order_Verdict}</title></circle>`;
+  });
+  s += `<text x="${(W + m.l) / 2}" y="${H - 4}" text-anchor="middle">PB ASW start − PA ASW start [ms] (offset-corrected)</text>`;
+  s += `<text transform="translate(12 ${(H - m.b) / 2}) rotate(-90)" text-anchor="middle">SysState = 2 duration [ms]</text></svg>`;
+  return s;
+}
+function frameBin(d) { if (isN(d)) return null; if (d < -0.5) return 0; if (d < 0.5) return 1; if (d < 1.5) return 2; if (d < 2.5) return 3; return 4; }
+const BINS = ['PB before PA', 'same frame (0)', '1 frame later', '2 frames later', '≥ 3 frames'];
+function svgHist(rows, W) {
+  const H = 260, m = { l:40, r:14, t:16, b:40 };
+  const c = BINS.map(() => ({ Y:0, N:0, NA:0 }));
+  let any = false;
+  rows.forEach(r => { const b = frameBin(deltaOf(r)); if (b !== null) { c[b][stsysAny(r)]++; any = true; } });
+  if (!any) return '<div class="note">No order data (IPC counters not recorded).</div>';
+  const top = Math.max(1, ...c.map(x => x.Y + x.N + x.NA)), step = Math.max(1, Math.ceil(niceStep(top, 4))), mx = Math.ceil(top / step) * step;
+  const bw = (W - m.l - m.r) / BINS.length, Y = v => (H - m.t - m.b) * v / mx;
+  let s = `<svg width="100%" viewBox="0 0 ${W} ${H}">`;
+  for (let v = 0; v <= mx; v += step) { const y = H - m.b - Y(v); s += `<line x1="${m.l}" x2="${W - m.r}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${m.l - 6}" y="${y + 4}" text-anchor="end">${v}</text>`; }
+  c.forEach((x, i) => {
+    let y = H - m.b; const x0 = m.l + i * bw + bw * .18, w = bw * .64;
+    [['Y','var(--coral)'], ['N','var(--teal)'], ['NA','var(--grey)']].forEach(([k, col]) => {
+      if (!x[k]) return; const h = Y(x[k]); y -= h;
+      s += `<rect x="${x0}" y="${y}" width="${w}" height="${h}" fill="${col}" rx="2"><title>${BINS[i]}: ${x[k]} (${k === 'Y' ? 'SysState = 2' : k === 'N' ? 'no 2' : 'no signal'})</title></rect>`;
+      if (h > 14) s += `<text x="${x0 + w / 2}" y="${y + h / 2 + 4}" text-anchor="middle" style="fill:#fff;font-weight:700">${x[k]}</text>`;
+    });
+    const tot = x.Y + x.N + x.NA;
+    s += `<text x="${x0 + w / 2}" y="${y - 4}" text-anchor="middle" class="lbl">${tot || ''}</text>`;
+    s += `<text x="${x0 + w / 2}" y="${H - m.b + 15}" text-anchor="middle" ${i === 0 ? 'style="fill:var(--coral)"' : ''}>${BINS[i]}</text>`;
+  });
+  s += `<text x="${(W + m.l) / 2}" y="${H - 4}" text-anchor="middle">bins: &lt;−0.5 · [−0.5,0.5) · [0.5,1.5) · [1.5,2.5) · ≥2.5 ms</text></svg>`;
+  return s;
+}
+function svgOffset(rows, W, interactive) {
+  const H = 232, m = { l:48, r:14, t:14, b:42 };
+  const pts = rows.map((r, i) => ({ r, i })).filter(p => !isN(p.r.clock_offset_ms));
+  if (!pts.length) return '<div class="note">No clock offset (IPC counters not recorded).</div>';
+  const lim = settingsOff(), vs = pts.map(p => p.r.clock_offset_ms);
+  const ymin = Math.min(-lim * 2, ...vs) - .5, ymax = Math.max(lim * 2, ...vs) + .5;
+  const n = rows.length, X = i => m.l + (n === 1 ? .5 : i / (n - 1)) * (W - m.l - m.r), Y = v => m.t + (1 - (v - ymin) / (ymax - ymin)) * (H - m.t - m.b);
+  let s = `<svg width="100%" viewBox="0 0 ${W} ${H}">`;
+  s += `<rect x="${m.l}" y="${Y(lim)}" width="${W - m.l - m.r}" height="${Y(-lim) - Y(lim)}" fill="var(--teal)" opacity=".12"/>`;
+  const step = Math.max(1, Math.ceil((ymax - ymin) / 6));
+  for (let v = Math.ceil(ymin); v <= ymax; v += step) s += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" opacity=".7"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
+  s += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--muted)"/>`;
+  let lastF = null, fi = 0;
+  rows.forEach((r, i) => { if (r.file_name !== lastF) { lastF = r.file_name;   // alternate label rows so short files don't overlap
+    s += `<line x1="${X(i)}" x2="${X(i)}" y1="${m.t}" y2="${H - m.b + 4 + (fi % 2) * 14}" stroke="var(--line)" stroke-dasharray="3 3"/><text x="${X(i) + 3}" y="${H - m.b + 13 + (fi % 2) * 14}"><title>${esc(r.file_name)}</title>${esc(r.file_name.replace(/\.mf4$/i, ''))}</text>`; fi++; } });
+  let path = '';
+  pts.forEach((p, j) => { path += (j ? 'L' : 'M') + X(p.i) + ' ' + Y(p.r.clock_offset_ms); });
+  s += `<path d="${path}" fill="none" stroke="var(--sky)" stroke-width="1.2" opacity=".7"/>`;
+  pts.forEach(p => {
+    const bad = p.r.Offset_Flag === 'OFFSET_SUSPECT';
+    s += `<circle ${interactive ? `class="clickable" data-key="${esc(p.r.key)}"` : ''} cx="${X(p.i)}" cy="${Y(p.r.clock_offset_ms)}" r="${bad ? 4.5 : 3.2}" fill="${bad ? 'var(--orange)' : 'var(--brand)'}">
+      <title>${esc(p.r.file_name)} #${p.r.startup_idx}\noffset ${f3(p.r.clock_offset_ms)} ms · latency ${f3(p.r.ipc_latency_ms)} ms · ${p.r.Offset_Flag}</title></circle>`;
+  });
+  s += `<text transform="translate(12 ${(H - m.b) / 2}) rotate(-90)" text-anchor="middle">offset P2 − P1 [ms]</text></svg>`;
+  return s;
+}
+function svgBars(map, W, col) {
+  const ks = Object.keys(map).sort((a, b) => map[b] - map[a]);
+  if (!ks.length) return '<div class="note">—</div>';
+  const rh = 24, H = ks.length * rh + 10, lw = 130, mx = Math.max(...ks.map(k => map[k]));
+  let s = `<svg width="100%" viewBox="0 0 ${W} ${H}">`;
+  ks.forEach((k, i) => {
+    const w = (W - lw - 50) * map[k] / mx, y = 5 + i * rh;
+    s += `<text x="${lw - 8}" y="${y + 15}" text-anchor="end" class="lbl">${esc(k)}</text><rect x="${lw}" y="${y + 3}" width="${Math.max(w, 2)}" height="${rh - 8}" rx="3" fill="${col}"/><text x="${lw + w + 6}" y="${y + 15}">${map[k]}</text>`;
+  });
+  return s + '</svg>';
+}
+function svgBars2(rows, W) {
+  const a = countBy(rows, r => r.p1_release_reason), b = countBy(rows, r => r.p2_release_reason);
+  const ks = [...new Set([...Object.keys(a), ...Object.keys(b)])].sort((x, y) => ((b[y] || 0) + (a[y] || 0)) - ((b[x] || 0) + (a[x] || 0)));
+  if (!ks.length) return '<div class="note">—</div>';
+  const rh = 34, H = ks.length * rh + 10, lw = 150, mx = Math.max(1, ...ks.map(k => Math.max(a[k] || 0, b[k] || 0)));
+  let s = `<svg width="100%" viewBox="0 0 ${W} ${H}">`;
+  ks.forEach((k, i) => {
+    const y = 5 + i * rh, wa = (W - lw - 50) * (a[k] || 0) / mx, wb = (W - lw - 50) * (b[k] || 0) / mx;
+    s += `<text x="${lw - 8}" y="${y + 19}" text-anchor="end" class="lbl">${esc(k)}</text>
+      ${a[k] ? `<rect x="${lw}" y="${y + 3}" width="${Math.max(wa, 2)}" height="12" rx="2" fill="var(--pa)"/><text x="${lw + wa + 5}" y="${y + 13}">${a[k]}</text>` : ''}
+      ${b[k] ? `<rect x="${lw}" y="${y + 17}" width="${Math.max(wb, 2)}" height="12" rx="2" fill="var(--pb)"/><text x="${lw + wb + 5}" y="${y + 27}">${b[k]}</text>` : ''}`;
+  });
+  return s + '</svg>';
+}
+
+/* ---------------- timeline ---------------- */
+let svgUid = 0;
+function tlModel(r, tl, mode) {
+  const off = (mode === 'corrected' && !isN(r.clock_offset_ms)) ? r.clock_offset_ms / 1000 : 0;
+  const ref = !isN(r.p1_release_time) ? r.p1_release_time : !isN(r.p2_release_time) ? r.p2_release_time - off : tl.seg_start;
+  const A = t => isN(t) ? null : (t - ref) * 1000, B = t => isN(t) ? null : (t - off - ref) * 1000;
+  const ev = [], bars = [], arrows = [], bands = [];
+  const lane = (L, T, p, rel, mov, mor, reason) => {
+    (p.gaps || []).forEach(g => bars.push({ L, a:T(g[0]), b:T(g[1]), kind:'gap', label:'reset / reboot', abs:`${f6(g[0])} – ${f6(g[1])} s` }));
+    (p.errors || []).forEach(e => ev.push({ L, t:T(e[0]), kind:'err', label:e[2] >= 4 ? 'max resets' : `reset #${e[2]}`, abs:f6(e[0]) }));
+    if (!isN(p.debounce_start) && !isN(rel)) bars.push({ L, a:T(p.debounce_start), b:T(rel), kind:'deb', label:`debounce ${((rel - p.debounce_start) * 1000).toFixed(1)} ms`, abs:f6(p.debounce_start) });
+    if (!isN(p.timeout_marker)) ev.push({ L, t:T(p.timeout_marker), kind:'tmo', label:'300 ms timeout', abs:f6(p.timeout_marker) });
+    if (!isN(rel)) ev.push({ L, t:T(rel), kind:'rel', label:`release · ${reason}`, abs:f6(rel) });
+    if (!isN(mov)) ev.push({ L, t:T(mov), kind:'mov', label:'MOV', abs:f6(mov) });
+    if (!isN(mor)) ev.push({ L, t:T(mor), kind:'mor', label:'ASW start', abs:f6(mor) });
+    (p.stsys2 || []).forEach(g => bars.push({ L, a:T(g[0]), b:T(g[1]), kind:'st2', label:`SysState = 2 · ${((g[1] - g[0]) * 1000).toFixed(1)} ms`, abs:f6(g[0]) }));
+    (p.stsys_segments || []).forEach(g => bands.push({ L, a:T(g[0]), b:T(g[1]), v:g[2], dur:(g[1] - g[0]) * 1000, abs:`${f6(g[0])} – ${f6(g[1])} s` }));
+  };
+  lane('A', A, tl.p1, r.p1_release_time, r.p1_mov_start_time, r.path1_mor_inc_time, r.p1_release_reason);
+  lane('B', B, tl.p2, r.p2_release_time, r.p2_mov_start_time, r.path2_mor_inc_time, r.p2_release_reason);
+  if (!isN(r.complete_tx_p1_time) && !isN(r.complete_rx_p2_time)) arrows.push({ from:'A', a:A(r.complete_tx_p1_time), b:B(r.complete_rx_p2_time), label:'RESET_COMPLETE', abs:`TX ${f6(r.complete_tx_p1_time)} (P1) → RX ${f6(r.complete_rx_p2_time)} (P2)` });
+  if (!isN(r.p1_own_mov_tx_time) && !isN(r.p2_rx_sibling_mov_time)) arrows.push({ from:'A', a:A(r.p1_own_mov_tx_time), b:B(r.p2_rx_sibling_mov_time), label:'MOV #1', abs:`TX ${f6(r.p1_own_mov_tx_time)} → RX ${f6(r.p2_rx_sibling_mov_time)}` });
+  if (!isN(r.p2_own_mov_tx_time) && !isN(r.p1_rx_sibling_mov_time)) arrows.push({ from:'B', a:B(r.p2_own_mov_tx_time), b:A(r.p1_rx_sibling_mov_time), label:'MOV #1', abs:`TX ${f6(r.p2_own_mov_tx_time)} → RX ${f6(r.p1_rx_sibling_mov_time)}` });
+  return { ev, bars, arrows, bands, ref, off, A, B, seg:[A(tl.seg_start), A(tl.seg_end)] };
+}
+function tlWindow(r, M, zoom) {
+  const vals = arr => arr.filter(v => !isN(v));
+  if (zoom === 'full') return M.seg;
+  const core = vals([...M.ev.filter(e => ['rel','mov','mor'].includes(e.kind)).map(e => e.t), ...M.arrows.flatMap(a => [a.a, a.b])]);
+  if (!core.length) return M.seg;
+  let lo = Math.min(...core) - 2.5, hi = Math.max(...core) + 2.5;
+  M.bars.filter(b => b.kind === 'st2').forEach(b => { hi = Math.max(hi, Math.min(b.b, lo + 60) + 1); });
+  if (zoom === 'debounce') {
+    const d = M.bars.find(b => b.kind === 'deb');
+    lo = d ? d.a - 4 : lo - 30;
+  }
+  if (hi - lo < 6) { const c = (hi + lo) / 2; lo = c - 3; hi = c + 3; }
+  return [lo, hi];
+}
+function svgTimeline(r, tl, mode, zoom, W) {
+  if (!tl) return '<div class="note">No timeline data.</div>';
+  const M = tlModel(r, tl, mode), [lo, hi] = tlWindow(r, M, zoom), id = 'tl' + (++svgUid);
+  // layout: PA lane, PA StSys band, IPC arrows, PB lane, PB StSys band, PB labels, axis
+  const H = 384, m = { l:104, r:16 }, yA = 128, yB = 246, bandOff = 15, bandH = 14, axisY = H - 24;
+  const X = t => m.l + (t - lo) / (hi - lo) * (W - m.l - m.r);
+  const inW = t => !isN(t) && t >= lo && t <= hi;
+  const colL = L => L === 'A' ? 'var(--pa)' : 'var(--pb)';
+  let s = `<svg width="100%" viewBox="0 0 ${W} ${H}"><defs>
+    <pattern id="${id}h" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="6" fill="var(--grey)" opacity=".55"/></pattern>
+    <marker id="${id}a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--teal)"/></marker>
+    <marker id="${id}b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--orange)"/></marker></defs>`;
+  // grid / axis
+  const span = hi - lo, steps = [0.1,0.2,0.5,1,2,5,10,20,50,100,200], st = steps.find(x => span / x <= 12) || 500;
+  for (let v = Math.ceil(lo / st) * st; v <= hi + 1e-9; v += st) {
+    s += `<line x1="${X(v)}" x2="${X(v)}" y1="40" y2="${axisY}" stroke="var(--line)" ${Math.abs(v) < 1e-9 ? 'stroke-width="1.6" stroke="var(--muted)"' : ''}/><text x="${X(v)}" y="${axisY + 15}" text-anchor="middle">${+v.toFixed(2)}</text>`;
+  }
+  s += `<text x="${W - m.r}" y="${H - 2}" text-anchor="end">ms relative to PATH A release (${mode === 'corrected' ? `PATH B shifted by ${f3(-M.off * 1000)} ms` : 'raw timestamps, no correction'})</text>`;
+  // lanes
+  [['A', yA, 'PATH A · P1'], ['B', yB, 'PATH B · P2']].forEach(([L, y, t]) => {
+    s += `<rect x="6" y="${y - 13}" width="${m.l - 16}" height="26" rx="6" fill="${colL(L)}"/><text x="${(m.l - 10) / 2 + 3}" y="${y + 4}" text-anchor="middle" style="fill:#fff;font-weight:700">${t}</text>`;
+    s += `<line x1="${m.l}" x2="${W - m.r}" y1="${y}" y2="${y}" stroke="${colL(L)}" stroke-width="3" stroke-linecap="round"/>`;
+  });
+  const yOf = L => L === 'A' ? yA : yB;
+  // bars
+  M.bars.forEach(b => {
+    if (isN(b.a) || isN(b.b) || b.b < lo || b.a > hi) return;
+    const a = Math.max(b.a, lo), e = Math.min(b.b, hi), y = yOf(b.L);
+    if (b.kind === 'gap') s += `<rect x="${X(a)}" y="${y - 11}" width="${Math.max(X(e) - X(a), 2)}" height="22" fill="url(#${id}h)" stroke="var(--grey)"><title>${b.label}: ${b.abs}</title></rect>`;
+    if (b.kind === 'deb') s += `<rect x="${X(a)}" y="${y - 7}" width="${Math.max(X(e) - X(a), 2)}" height="14" rx="3" fill="var(--yellow)" opacity=".9"><title>${b.label} (start ${b.abs})</title></rect>`;
+    // fallback only when the full StSys band is not available (older cache / no segments): coral "= 2" bar
+    if (b.kind === 'st2' && !M.bands.some(x => x.L === b.L)) s += `<rect x="${X(a)}" y="${y + bandOff}" width="${Math.max(X(e) - X(a), 3)}" height="${bandH}" rx="2" fill="var(--coral)"><title>${b.label} (from ${b.abs})</title></rect>`;
+  });
+  // SysState band under each lane: every value, coloured per value (CM_SysState)
+  [['A', yA], ['B', yB]].forEach(([L, y]) => {
+    const segs = M.bands.filter(b => b.L === L && !isN(b.a) && !isN(b.b) && b.b >= lo && b.a <= hi);
+    s += `<text x="${m.l - 8}" y="${y + bandOff + 11}" text-anchor="end" style="font-size:10px">SysState</text>`;
+    if (!segs.length) { s += `<text x="${m.l + 4}" y="${y + bandOff + 11}" style="font-size:10px">not recorded</text>`; return; }
+    const all = M.bands.filter(b => b.L === L);
+    segs.forEach(b => {
+      const a = Math.max(b.a, lo), e = Math.min(b.b, hi), w = Math.max(X(e) - X(a), 1.5);
+      // first / last segment are cut by the recorded window (50 ms before release … end of StSys window): no duration
+      const cut = b === all[0] || b === all[all.length - 1];
+      const tip = `SysState = ${b.v} · ${stName(b.v)}\n` + (cut ? `continues beyond the evaluated window · ${b.abs}` : `${b.dur.toFixed(2)} ms · ${b.abs}`) + ` (${L === 'A' ? 'P1' : 'P2'} clock)`;
+      s += `<g><title>${esc(tip)}</title><rect x="${X(a)}" y="${y + bandOff}" width="${w}" height="${bandH}" fill="${stFill(b.v)}" ${b.v === 7 ? `stroke="#6E0B24" stroke-dasharray="3 2"` : ''} opacity=".95"/>`;
+      const full = `${b.v} · ${cut ? stName(b.v) : b.dur.toFixed(1) + ' ms'}`;   // falls back to the value if it does not fit
+      const txt = full.length * 6.4 + 10 <= w ? full : w > 14 ? String(b.v) : '';
+      if (txt) s += `<text x="${X(a) + w / 2}" y="${y + bandOff + 10.5}" text-anchor="middle" style="fill:${stTxt(b.v)};font-size:10px;font-weight:700">${txt}</text>`;
+      s += '</g>';
+    });
+  });
+  // arrows
+  // "received before sent" only beyond one logging sample (sampling noise of the two VX1000 groups is not an error)
+  const backTol = Math.max(0.25, (isN(r.sample_period_ms) ? 0.2 : r.sample_period_ms) * 1.2);
+  M.arrows.forEach((ar, ai) => {
+    if (isN(ar.a) || isN(ar.b) || (!inW(ar.a) && !inW(ar.b))) return;
+    const yAo = yA + bandOff + bandH + 3;   // arrows leave/enter PA below its StSys band
+    const y0 = ar.from === 'A' ? yAo : yB - 8, y1 = ar.from === 'A' ? yB - 8 : yAo, back = ar.b < ar.a - backTol;
+    const x0 = X(Math.min(Math.max(ar.a, lo), hi)), x1 = X(Math.min(Math.max(ar.b, lo), hi));
+    s += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${back ? 'var(--orange)' : 'var(--teal)'}" stroke-width="1.8" ${back ? 'stroke-dasharray="5 3"' : ''} marker-end="url(#${id}${back ? 'b' : 'a'})"><title>${ar.label}: ${ar.abs}\nΔ ${f3(ar.b - ar.a)} ms${back ? ' — received BEFORE sent: clock offset of the recording' : ''}</title></line>`;
+    const fr = [0.28, 0.52, 0.76][ai % 3];                                      // spread labels along the arrows
+    const lx = x0 + (x1 - x0) * fr, ly = y0 + (y1 - y0) * fr + 4;
+    s += `<text x="${lx + 6}" y="${ly}" style="fill:${back ? 'var(--orange)' : 'var(--teal)'};font-weight:600;paint-order:stroke;stroke:var(--panel);stroke-width:3px">${ar.label}${back ? ' ⚠' : ''} ${f2(ar.b - ar.a)} ms</text>`;
+  });
+  // point events + labels (greedy levels to avoid overlap)
+  const used = { A:[], B:[] };
+  const place = (L, x, w) => { const lv = used[L]; for (let i = 0; i < 5; i++) { lv[i] = lv[i] || []; if (lv[i].every(([a, b]) => x + w < a || x > b)) { lv[i].push([x, x + w]); return i; } } return 4; };
+  const evs = M.ev.filter(e => inW(e.t)).sort((p, q) => p.t - q.t);
+  evs.forEach(e => {
+    const y = yOf(e.L), x = X(e.t), col = colL(e.L);
+    let mk = '';
+    if (e.kind === 'rel') mk = `<line x1="${x}" x2="${x}" y1="${y - 16}" y2="${y + 16}" stroke="${col}" stroke-width="2.5"/><path d="M${x} ${y - 16} l9 4 l-9 4z" fill="${col}"/>`;
+    else if (e.kind === 'mor') mk = `<path d="M${x} ${y - 9} l7 12 h-14z" fill="${col}" stroke="var(--panel)"/>`;
+    else if (e.kind === 'mov') mk = `<circle cx="${x}" cy="${y}" r="5" fill="var(--panel)" stroke="${col}" stroke-width="2.5"/>`;
+    else if (e.kind === 'err') mk = `<path d="M${x - 5} ${y - 5} l10 10 M${x + 5} ${y - 5} l-10 10" stroke="var(--coral)" stroke-width="2.5"/>`;
+    else if (e.kind === 'tmo') mk = `<path d="M${x} ${y - 7} l7 7 l-7 7 l-7 -7z" fill="var(--orange)"/>`;
+    const txt = e.label, w = txt.length * 7.2 + 12, lvl = place(e.L, x, w);   // generous width: capitals are wide
+    const ly = e.L === 'A' ? y - 26 - lvl * 15 : y + bandOff + bandH + 16 + lvl * 15;   // PB labels below its band
+    s += `<g><title>${esc(txt)} @ ${e.abs} s (${e.L === 'A' ? 'P1' : 'P2'} clock)</title>${mk}
+      <line x1="${x}" x2="${x}" y1="${e.L === 'A' ? ly + 3 : y + bandOff + bandH + 2}" y2="${e.L === 'A' ? y - 10 : ly - 10}" stroke="var(--line)"/>
+      <text x="${x + 2}" y="${ly}" class="lbl" ${e.kind === 'mor' ? 'style="font-weight:700"' : ''}>${esc(txt)}</text></g>`;
+  });
+  s += '</svg>';
+  return s;
+}
+function tlHeadHtml(r) {
+  const d = deltaOf(r);
+  return `<span><b>${esc(r.file_name)}</b> · start-up #${r.startup_idx} · ${esc(r.scenario)}</span>
+    <span>Verdict ${badge(r.Order_Verdict)} ${badge(r.Order_Result)}</span>
+    <span>PB − PA: <b>${f3(d)} ms</b> corrected · ${f3(r.offsetfree_diff_ms)} ms offset-free · <span class="note" style="margin:0">raw ${f3(r.raw_diff_mor_ms)} ms</span></span>
+    <span>Clock offset <b>${f3(r.clock_offset_ms)} ms</b> ${badge(r.Offset_Flag)}</span>
+    <span>SysState: ${stsysStrip(r.p1_stsys_sequence, 'A')} &nbsp; ${stsysStrip(r.p2_stsys_sequence, 'B')}</span>
+    <span>Release: A ${esc(r.p1_release_reason)} · B ${esc(r.p2_release_reason)}</span>
+    <span>Logging ${f3(r.sample_period_ms)} ms · R1–R4 ${lights(r)}</span>`;
+}
+function renderTimeline() {
+  if (!$('#tlSvg')) return;
+  const r = rowsAll().find(x => x.key === selKey);
+  if (!r) { $('#tlHead').innerHTML = '<span class="note">Select a start-up in the table or a chart.</span>'; $('#tlSvg').innerHTML = ''; $('#tlCallout').innerHTML = ''; return; }
+  $('#tlHead').innerHTML = tlHeadHtml(r); $('#tlStLegend').innerHTML = stsysLegend();
+  $('#tlCallout').innerHTML = (r.Offset_Flag === 'OFFSET_SUSPECT' && tlMode === 'raw')
+    ? `<div class="callout">Raw timestamps of PATH1 and PATH2 are offset by <b>${f3(r.clock_offset_ms)} ms</b> in this start-up. Orange dashed IPC arrows are frames that appear to be received before they were sent — switch to <b>Corrected</b> to see the real order.</div>` : '';
+  $('#tlSvg').innerHTML = svgTimeline(r, job.timelines[r.key], tlMode, tlZoom, Math.max($('#tlSvg').clientWidth || 900, 600));
+}
+function selectRow(key, scroll) {
+  selKey = key; renderTimeline(); renderTable();
+  const r = rowsAll();
+  $('#chScatter').innerHTML = svgScatter(r, Math.max($('#chScatter').clientWidth || 600, 420), true);
+  if (scroll) $('#tlCard').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function stepSel(d) {
+  const rows = filtered(); if (!rows.length) return;
+  let i = rows.findIndex(r => r.key === selKey); i = (i + d + rows.length) % rows.length;
+  selectRow(rows[i].key, false);
+}
+
+/* ---------------- table ---------------- */
+const COLS = [
+  ['n','#'], ['file_name','File'], ['startup_idx','Start-up'], ['scenario','Scenario'], ['p1_release_reason','A release'], ['p2_release_reason','B release'],
+  ['raw_diff_mor_ms','Raw Δ'], ['clock_offset_ms','Offset'], ['corrected_diff_mor_ms','Corr. Δ'], ['offsetfree_diff_ms','Off-free Δ'],
+  ['stA','StSys PATH A'], ['stB','StSys PATH B'], ['Order_Verdict','Verdict'], ['Order_Result','Result'], ['Offset_Flag','Offset flag'], ['req','R1–R4']];
+const COL_TIPS = {
+  stA:'SysState value sequence on PATH A (P1) from its release to release + StSys window. Pill = value (colour per value, see legend); number after the value = how long it was shown. Sort = duration of value 2.',
+  stB:'SysState value sequence on PATH B (P2) from its release to release + StSys window. Sort = duration of value 2.',
+  corrected_diff_mor_ms:'PB ASW start − PA ASW start [ms], corrected by the measured clock offset', offsetfree_diff_ms:'PB − PA [ms] from own-clock IPC delays (independent of any clock offset)',
+  raw_diff_mor_ms:'PB − PA [ms] from raw timestamps (as plotted in CANape)', clock_offset_ms:'PATH2 − PATH1 timestamp offset [ms] measured from IPC counter pairs' };
+const stSortKey = v => isN(v) ? -1 : v;
+function opts(sel, vals, all) {
+  const el = $(sel), prev = el.value, html = `<option value="">${all}</option>` + vals.map(v => `<option>${esc(v)}</option>`).join('');
+  if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; el.value = prev; }
+}
+function syncFilters(rows) {
+  const u = f => [...new Set(rows.map(f))].filter(v => v !== null && v !== undefined).sort();
+  opts('#fFile', u(r => r.file_name), 'All files'); opts('#fScen', u(r => r.scenario), 'All');
+  opts('#fVerd', u(r => r.Order_Verdict), 'All'); opts('#fRes', u(r => r.Order_Result), 'All'); opts('#fOff', u(r => r.Offset_Flag), 'All');
+}
+function filtered() {
+  if (!job || !$('#fFile')) return [];
+  const f = { file:$('#fFile').value, scen:$('#fScen').value, verd:$('#fVerd').value, res:$('#fRes').value, st:$('#fSt').value, off:$('#fOff').value, q:$('#fText').value.toLowerCase().trim() };
+  let rows = rowsAll().map(r => ({ ...r, stsys:stsysAny(r), stA:stSortKey(r.p1_stsys2_ms), stB:stSortKey(r.p2_stsys2_ms) }));
+  rows = rows.filter(r => (!f.file || r.file_name === f.file) && (!f.scen || r.scenario === f.scen) && (!f.verd || r.Order_Verdict === f.verd) &&
+    (!f.res || r.Order_Result === f.res) && (!f.st || (f.st === 'A2' ? r.p1_stsys2 === 'Y' : f.st === 'B2' ? r.p2_stsys2 === 'Y' : r.stsys === f.st)) && (!f.off || r.Offset_Flag === f.off) &&
+    (!f.q || [r.file_name, r.scenario, r.p1_release_reason, r.p2_release_reason, r.p1_release_time, r.p2_release_time, r.Order_Verdict].join(' ').toLowerCase().includes(f.q)));
+  const k = sort.key, val = r => k === 'req' ? REQS.map(q => q.f(r)).join('') : r[k];
+  rows.sort((a, b) => { const x = val(a), y = val(b); if (isN(x) && isN(y)) return 0; if (isN(x)) return 1; if (isN(y)) return -1; return (x > y ? 1 : x < y ? -1 : 0) * sort.dir; });
+  return rows;
+}
+function renderTable() {
+  if (!$('#rowTable')) return;
+  const rows = filtered();
+  $('#rowCount').textContent = `${rows.length} of ${job.rows.length} start-ups`;
+  let h = '<thead><tr>' + COLS.map(([k, t]) => `<th data-k="${k}" class="${k === 'file_name' || k === 'stA' || k === 'stB' ? 'tl' : ''}" ${COL_TIPS[k] ? `title="${esc(COL_TIPS[k])}"` : ''}>${t}${sort.key === k ? `<span class="arr"> ${sort.dir > 0 ? '▲' : '▼'}</span>` : ''}</th>`).join('') + '</tr></thead><tbody>';
+  rows.forEach(r => {
+    const cls = [r.key === selKey ? 'sel' : '', r.Order_Result === 'NOK' ? 'nokrow' : r.Order_Result === 'CHECK' ? 'checkrow' : ''].join(' ');
+    h += `<tr class="${cls}" data-key="${esc(r.key)}"><td>${r.n}</td><td class="tl truncate" title="${esc(r.file_name)}">${esc(r.file_name)}</td><td>${r.startup_idx}</td>
+      <td>${esc(r.scenario)}</td><td>${esc(r.p1_release_reason)}</td><td>${esc(r.p2_release_reason)}</td>
+      <td>${f3(r.raw_diff_mor_ms)}</td><td>${f3(r.clock_offset_ms)}</td><td><b>${f3(r.corrected_diff_mor_ms)}</b></td><td>${f3(r.offsetfree_diff_ms)}</td>
+      <td class="tl">${stsysStrip(r.p1_stsys_sequence, 'A')}</td><td class="tl">${stsysStrip(r.p2_stsys_sequence, 'B')}</td><td>${badge(r.Order_Verdict)}</td><td>${badge(r.Order_Result)}</td><td>${badge(r.Offset_Flag)}</td><td>${lights(r)}</td></tr>`;
+  });
+  const t = $('#rowTable'); t.innerHTML = h + '</tbody>';
+  t.querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.k; sort = { key:k, dir:sort.key === k ? -sort.dir : 1 }; renderTable(); });
+  t.querySelectorAll('tbody tr').forEach(tr => tr.onclick = () => selectRow(tr.dataset.key, true));
+}
+
+/* ---------------- exports ---------------- */
+const popToggle = (btn, pop) => { $(btn).onclick = e => { e.stopPropagation(); const o = $(pop).hidden; document.querySelectorAll('.pop').forEach(p => p.hidden = true); $(pop).hidden = !o; }; };
+popToggle('#csvMenuBtn', '#csvPop'); popToggle('#repMenuBtn', '#repPop');
+document.addEventListener('click', e => { if (!e.target.closest('.menu')) document.querySelectorAll('.pop').forEach(p => p.hidden = true); });
+const stamp = () => new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+function baseName() {
+  const fs = [...new Set(job.rows.map(r => r.file_name))];
+  return fs.length === 1 ? fs[0].replace(/\.(mf4|mdf)$/i, '') : 'Startup_Order_Analysis';
+}
+function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+async function exportCsv(keys) {
+  const r = await fetch('/api/export_csv', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ job:job.id, keys }) });
+  if (!r.ok) { alert('CSV export failed: ' + (await r.text())); return; }
+  const name = baseName() + (keys.length ? '_filtered' : '') + '_Startup_Order.csv';
+  download(await r.blob(), name);
+}
+$('#csvFiltered').onclick = () => { const k = filtered().map(r => r.key); if (!k.length) { alert('No rows match the filter.'); return; } exportCsv(k); };
+$('#csvAll').onclick = () => exportCsv([]);
+function reportFromMenu() {
+  const rows = $('#repRows').value === 'filtered' ? filtered() : rowsAll().map(r => ({ ...r, stsys:stsysAny(r) }));
+  const which = $('#repTl').value;
+  const tlRows = which === 'all' ? rows : which === 'selected' ? rows.filter(r => r.key === selKey)
+               : which === 'none' ? [] : rows.filter(r => r.Order_Result === 'NOK' || r.Order_Result === 'CHECK' || stsysAny(r) === 'Y');
+  $('#repPop').hidden = true;
+  return new Blob([buildReport(rows, tlRows, $('#repMode').value)], { type:'text/html' });
+}
+$('#repGo').onclick = () => download(reportFromMenu(), baseName() + '_Startup_Order_Report_' + stamp() + '.html');
+$('#repPrev').onclick = () => { const u = URL.createObjectURL(reportFromMenu()); window.open(u, '_blank'); setTimeout(() => URL.revokeObjectURL(u), 60000); };
+function buildReport(rows, tlRows, mode) {
+  const css = $('#baseStyle').textContent;
+  const W = 1100, files = job.files.map(f => `<li>${esc(f.name)} — ${f.count} start-ups${f.message ? ' · ' + esc(f.message) : ''}</li>`).join('');
+  const s = job.settings;
+  const tbl = `<table><thead><tr>${COLS.map(([, t], i) => `<th class="${i === 1 ? 'tl' : ''}">${t}</th>`).join('')}</tr></thead><tbody>` + rows.map(r =>
+    `<tr class="${r.Order_Result === 'NOK' ? 'nokrow' : r.Order_Result === 'CHECK' ? 'checkrow' : ''}"><td>${r.n}</td><td class="tl">${esc(r.file_name)}</td><td>${r.startup_idx}</td><td>${esc(r.scenario)}</td>
+      <td>${esc(r.p1_release_reason)}</td><td>${esc(r.p2_release_reason)}</td><td>${f3(r.raw_diff_mor_ms)}</td><td>${f3(r.clock_offset_ms)}</td><td><b>${f3(r.corrected_diff_mor_ms)}</b></td>
+      <td>${f3(r.offsetfree_diff_ms)}</td><td class="tl">${stsysStrip(r.p1_stsys_sequence, 'A')}</td><td class="tl">${stsysStrip(r.p2_stsys_sequence, 'B')}</td><td>${badge(r.Order_Verdict)}</td><td>${badge(r.Order_Result)}</td><td>${badge(r.Offset_Flag)}</td><td>${lights(r)}</td></tr>`).join('') + '</tbody></table>';
+  const tls = tlRows.map(r => {
+    const tl = job.timelines[r.key];
+    const both = mode === 'both' || r.Offset_Flag === 'OFFSET_SUSPECT';
+    return `<div class="card section" style="break-inside:avoid"><div class="card-head"><h2>Timeline · ${esc(r.file_name)} #${r.startup_idx}</h2></div>
+      <div class="tlhead">${tlHeadHtml(r)}</div>
+      <div class="card-body"><div class="note">Corrected axis (PATH B shifted by the measured clock offset)</div>${svgTimeline(r, tl, 'corrected', 'release', W)}
+      ${both ? `<div class="note">Raw timestamps (as plotted in CANape)</div>${svgTimeline(r, tl, 'raw', 'release', W)}` : ''}</div></div>`;
+  }).join('');
+  return `<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Start-up Order Report</title><style>${css}
+  body{max-width:1180px;margin:0 auto;padding:0 16px 40px} header{position:static;border-radius:0 0 12px 12px} .card{margin-bottom:18px}
+  .tablewrap{max-height:none} tbody tr{cursor:default} table{font-size:11.5px} th,td{padding:5px 6px} th{font-size:10px}
+  @media print{header{box-shadow:none}.card{box-shadow:none} .tablewrap{overflow:visible}}</style></head><body>
+<header><div class="logo">S/O</div><div><h1>Start-up Order Report</h1><small>PATH A (master) vs PATH B · created by ${esc(ownerOf())} · generated ${new Date().toLocaleString()}</small></div>
+  <div class="spacer"></div><span class="owner">👤 Owner: ${esc(ownerOf())}</span></header>
+<div class="stripe"><span style="background:#0024D3"></span><span style="background:#00A9EB"></span><span style="background:#00B48F"></span><span style="background:#F06473"></span><span style="background:#F58C35"></span><span style="background:#FED34C"></span></div>
+${ownershipHtml()}
+<div class="card section"><div class="card-head"><h2>Scope</h2></div><div class="card-body">
+  <ul style="margin:0 0 6px 18px;padding:0">${files}</ul>
+  <div class="note">${rows.length} start-ups in this report · settings: same-frame tolerance ${s.same_frame_tol_ms} ms, offset suspect &gt; ${s.offset_suspect_ms} ms, MOV/MOR window ${s.window_ms} ms, SysState window ${s.stsys_window_ms} ms.</div></div></div>
+<div class="card section"><div class="card-head"><h2>Summary</h2></div><div class="cards">${cardsHtml(rows)}</div></div>
+<div class="card section"><div class="card-head"><h2>Requirement check</h2></div><div class="card-body">${reqHtml(rows)}</div></div>
+<div class="card section"><div class="card-head"><h2>Cause → effect</h2></div><div class="card-body">${svgScatter(rows, W, false)}</div></div>
+<div class="card section"><div class="card-head"><h2>Start delay in 1 ms frames</h2></div><div class="card-body">${svgHist(rows, W)}</div></div>
+<div class="card section"><div class="card-head"><h2>SysState per path</h2></div><div class="card-body">${stsysLegend()}<div style="margin-top:8px">${stsysPatternsHtml(rows)}</div></div></div>
+<div class="card section"><div class="card-head"><h2>Measurement quality — clock offset per start-up</h2></div><div class="card-body">${svgOffset(rows, W, false)}</div></div>
+<div class="card section"><div class="card-head"><h2>Scenarios / release reasons</h2></div><div class="card-body">${svgBars(countBy(rows, r => r.scenario), W, 'var(--pa)')}${svgBars2(rows, W)}</div></div>
+${tls}
+<div class="card section"><div class="card-head"><h2>Start-ups</h2></div><div class="tablewrap">${tbl}</div></div>
+<div class="card section"><div class="card-head"><h2>Method</h2></div><div class="card-body" style="font-size:13px">
+<p><b>ASW start</b> = first update of <code>App_MainCounter_u8</code> on each path after <code>Ctrl_InitDone_bl</code> is set.</p>
+<p><b>Clock offset</b>: PATH1 and PATH2 are logged with separate time bases. The offset is measured per start-up from the IPC alive counters of the 1 ms TRQ message in both directions
+(A→B lag = latency + offset, B→A lag = latency − offset ⇒ offset = (lagAB − lagBA)/2), fitted linearly over time and evaluated at the ASW start. <i>Corrected Δ</i> = raw Δ − offset.</p>
+<p><b>Offset-free Δ</b>: each path measures on its own clock the delay between its first MOV IPC frame and the reception of the sibling's first MOV frame; (Δ<sub>A</sub> − Δ<sub>B</sub>)/2 = PB start − PA start, independent of any clock offset.</p>
+<p><b>SysState</b> (<code>SysState_u8</code>) is evaluated per path on its own clock from the path's release to release + ${job.settings.stsys_window_ms} ms.
+The sequence (e.g. <code>6(1.8ms)&gt;2(4.0ms)&gt;0</code>) lists every value in that window with how long it was shown (sample-and-hold, resolution = one logging sample);
+the last value is open-ended. "SysState = 2" = at least one sample with value 2. Colours: ${[0, 1, 2, 3, 4, 6, 7].map(v => `${stsysPill(v, null, false)} ${esc(stName(v))}`).join(' · ')}.</p>
+<p><b>Verdict</b>: |Δ| ≤ tolerance = same 1 ms frame; PB_BEFORE_PA is only reported when both methods agree, otherwise CHECK. The order rule is enforced only when PB released on PA's RESET_COMPLETE.</p>
+</div></div>
+<div class="card section"><div class="card-body" style="padding-top:14px;font-size:12px;color:var(--muted)">
+  Report created by <b style="color:var(--text)">${esc(ownerOf())}</b> on ${new Date().toLocaleString()} with the Start-up Order Viewer
+  (analysis script version ${esc(job.script || '—')}). ${esc(ownerOf())} is the sole owner of, and responsible for, this analysis and the explanation in this report.
+</div></div></body></html>`;
+}
+function ownershipHtml() {
+  const o = esc(ownerOf());
+  return `<div class="card section" style="margin-top:18px"><div class="ownership"><div class="sig">👤 ${o}</div>
+    <div><b>Report created by ${o}</b><div class="note" style="margin:2px 0 0">${o} is the sole owner of this analysis and is responsible for the
+    explanation and conclusions in this report. Generated ${new Date().toLocaleString()}.</div></div></div></div>`;
+}
+
+window.addEventListener('resize', () => { if (job && job.rows.length) renderResults(); });
+loadRoots(true);
+renderSelected();
+{ const p = new URLSearchParams(location.search);
+  if (p.get('theme')) document.documentElement.dataset.theme = p.get('theme');
+  if (p.get('job')) resumeJob(p.get('job')); }
+</script>
+</body>
+</html>

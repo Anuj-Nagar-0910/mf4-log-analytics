@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.mf4
+*.MF4
+*.mdf
+*.csv
+config/signals.local.json
+.venv/

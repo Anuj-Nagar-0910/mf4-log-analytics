@@ -1,0 +1,21 @@
+{
+  "_comment": "Logical role -> channel name in your MF4. Copy to config/signals.local.json (git-ignored) and edit.",
+  "path1_marker": "PATH1",
+  "path2_marker": "PATH2",
+  "init_done": "Ctrl_InitDone_bl",
+  "error_counter": "Ctrl_ResetCounter_u8",
+  "main_cnt": "App_MainCounter_u8",
+  "aux_cnt": "App_AuxCounter_u8",
+  "hold_timeout": "Ctrl_HoldTimeout_bl",
+  "hold_cnt": "Ctrl_HoldCnt_u16",
+  "sync_debounce": "Ctrl_SyncDebounce_u8",
+  "complete_latch": "Ipc_ResetCompleteLatch_bl",
+  "sys_state": "SysState_u8",
+  "ipc_tx": "Ipc_TxCounter_au8",
+  "ipc_rx": "Ipc_RxCounter_au8",
+  "ipc_mov_a": 0,
+  "ipc_trq_a": 1,
+  "ipc_mov_b": 9,
+  "ipc_trq_b": 10,
+  "ipc_complete_a": 18
+}
